@@ -21,7 +21,6 @@ const StaffLogin = () => {
             });
 
             if (response.data.success) {
-                // Store staff info in localStorage
                 localStorage.setItem('staff_logged_in', 'true');
                 localStorage.setItem('staff_id', response.data.staff_id);
                 localStorage.setItem('staff_name', response.data.name);
