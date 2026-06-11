@@ -1,3 +1,5 @@
+import StaffLogin from './pages/StaffLogin';
+import StaffDashboard from './pages/StaffDashboard';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -23,6 +25,8 @@ function App() {
                         <Routes>
                             <Route path="/login" element={<Login />} />
                             <Route path="/register" element={<Register />} />
+                            <Route path="/staff-login" element={<StaffLogin />} />
+                            <Route path="/staff-dashboard" element={<StaffDashboard />} />
                             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                             <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
                             <Route path="/contact" element={<ProtectedRoute><Contact /></ProtectedRoute>} />
