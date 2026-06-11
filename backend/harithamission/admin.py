@@ -5,70 +5,90 @@ from .models import (
     ContactMessage, Reward, RewardRedemption
 )
 
-# Custom admin site header
+# Customize admin panel header
 admin.site.site_header = "🌿 HarithaMission Admin Panel"
 admin.site.site_title = "HarithaMission"
 admin.site.index_title = "Welcome to HarithaMission Dashboard"
 
+# Add custom CSS to admin
+admin.site.index_template = None
+
+class Media:
+    css = {
+        'all': ('https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',)
+    }
+
 @admin.register(Mission)
 class MissionAdmin(admin.ModelAdmin):
-    list_display = ['title', 'location', 'date', 'spots_available', 'status', 'status_badge']
-    list_filter = ['status', 'location', 'date']
-    search_fields = ['title', 'description', 'location']
+    list_display = ['title', 'location', 'date', 'spots_available', 'status', 'colored_status']
+    list_filter = ['status', 'location']
+    search_fields = ['title']
     list_editable = ['spots_available', 'status']
-    date_hierarchy = 'date'
     
-    def status_badge(self, obj):
-        colors = {
-            'upcoming': '#FF9800',
-            'ongoing': '#2196F3',
-            'completed': '#4CAF50',
-            'cancelled': '#F44336'
-        }
-        return format_html('<span style="background: {}; color: white; padding: 3px 10px; border-radius: 15px;">{}</span>', 
-                          colors.get(obj.status, '#999'), obj.status.upper())
-    status_badge.short_description = 'Status'
+    def colored_status(self, obj):
+        colors = {'upcoming': 'orange', 'ongoing': 'blue', 'completed': 'green', 'cancelled': 'red'}
+        return format_html('<span style="background: {}; color: white; padding: 3px 8px; border-radius: 12px;">{}</span>', 
+                          colors.get(obj.status, 'gray'), obj.status.upper())
+    colored_status.short_description = 'Status'
 
 @admin.register(Volunteer)
 class VolunteerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'phone', 'city', 'total_points', 'is_active']
+    list_display = ['user', 'phone', 'city', 'total_points', 'active_badge']
     list_filter = ['city', 'is_active']
-    search_fields = ['user__username', 'phone', 'city']
+    search_fields = ['user__username', 'phone']
     list_editable = ['total_points']
-    list_per_page = 25
+    
+    def active_badge(self, obj):
+        if obj.is_active:
+            return format_html('<span style="background: green; color: white; padding: 3px 8px; border-radius: 12px;">Active</span>')
+        return format_html('<span style="background: red; color: white; padding: 3px 8px; border-radius: 12px;">Inactive</span>')
+    active_badge.short_description = 'Status'
 
 @admin.register(WastePickup)
 class WastePickupAdmin(admin.ModelAdmin):
-    list_display = ['id', 'volunteer', 'waste_type', 'points_earned', 'status', 'preferred_date']
-    list_filter = ['status', 'waste_type', 'preferred_date']
-    search_fields = ['volunteer__user__username', 'address']
+    list_display = ['id', 'volunteer', 'waste_type', 'status', 'status_badge', 'preferred_date']
+    list_filter = ['status', 'waste_type']
+    search_fields = ['volunteer__user__username']
     list_editable = ['status']
-    list_per_page = 25
+    
+    def status_badge(self, obj):
+        colors = {'pending': 'orange', 'confirmed': 'blue', 'completed': 'green', 'cancelled': 'red'}
+        return format_html('<span style="background: {}; color: white; padding: 3px 8px; border-radius: 12px;">{}</span>', 
+                          colors.get(obj.status, 'gray'), obj.status.upper())
+    status_badge.short_description = 'Status'
 
 @admin.register(MissionRegistration)
 class MissionRegistrationAdmin(admin.ModelAdmin):
     list_display = ['volunteer', 'mission', 'registered_date', 'status']
-    list_filter = ['status', 'registered_date']
-    search_fields = ['volunteer__user__username', 'mission__title']
-    list_editable = ['status']
+    list_filter = ['status']
+    search_fields = ['volunteer__user__username']
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
-    list_display = ['name', 'email', 'subject', 'created_at', 'is_read']
-    list_filter = ['is_read', 'created_at']
-    search_fields = ['name', 'email', 'subject']
+    list_display = ['name', 'email', 'subject', 'created_at', 'read_badge']
+    list_filter = ['is_read']
+    search_fields = ['name', 'email']
     list_editable = ['is_read']
+    
+    def read_badge(self, obj):
+        if obj.is_read:
+            return format_html('<span style="background: green; color: white; padding: 3px 8px; border-radius: 12px;">✓ Read</span>')
+        return format_html('<span style="background: red; color: white; padding: 3px 8px; border-radius: 12px;">● Unread</span>')
+    read_badge.short_description = 'Status'
 
 @admin.register(Reward)
 class RewardAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'points_required', 'stock', 'is_popular']
-    list_filter = ['category', 'is_popular']
-    search_fields = ['name', 'description']
-    list_editable = ['points_required', 'stock', 'is_popular']
+    list_display = ['name', 'category', 'points_required', 'stock', 'icon_display']
+    list_filter = ['category']
+    search_fields = ['name']
+    list_editable = ['points_required', 'stock']
+    
+    def icon_display(self, obj):
+        return format_html('<span style="font-size: 20px;">{}</span>', obj.icon)
+    icon_display.short_description = 'Icon'
 
 @admin.register(RewardRedemption)
 class RewardRedemptionAdmin(admin.ModelAdmin):
     list_display = ['volunteer', 'reward', 'points_spent', 'redeemed_date', 'status']
-    list_filter = ['status', 'redeemed_date']
-    search_fields = ['volunteer__user__username', 'reward__name']
-    list_editable = ['status']
+    list_filter = ['status']
+    search_fields = ['volunteer__user__username']
