@@ -5,34 +5,39 @@ from .models import (
     ContactMessage, Reward, RewardRedemption
 )
 
-# Custom Admin Site with Inline CSS
-class HarithaMissionAdminSite(admin.AdminSite):
-    site_header = "🌿 HarithaMission Admin Panel"
-    site_title = "HarithaMission"
-    index_title = "Welcome to HarithaMission Dashboard"
-    
-    # Add custom CSS directly to the admin
-    def each_context(self, request):
-        context = super().each_context(request)
-        context['extra_css'] = """
-        <style>
-            #header { background: linear-gradient(95deg, #1B5E20, #4CAF50) !important; }
-            #branding h1 a { color: white !important; font-size: 20px !important; }
-            .module h2 { background: #2E7D32 !important; color: white !important; }
-            .button, input[type=submit] { background: #4CAF50 !important; border-radius: 5px !important; border: none !important; }
-            .button:hover, input[type=submit]:hover { background: #1B5E20 !important; }
-            a:link, a:visited { color: #2E7D32 !important; }
-            .submit-row input { background: #4CAF50 !important; }
-            .addlink, .changelink { color: #2E7D32 !important; }
-            .dashboard #content { background: #f9f9f9; }
-            .dashboard .module table { border-radius: 8px; overflow: hidden; }
-        </style>
-        """
-        return context
+# Apply custom CSS to default admin site
+admin.site.site_header = "🌿 HarithaMission Admin Panel"
+admin.site.site_title = "HarithaMission"
+admin.site.index_title = "Welcome to HarithaMission Dashboard"
 
-admin_site = HarithaMissionAdminSite(name='harithamission_admin')
+# Inject custom CSS
+extra_css = """
+<style>
+    #header { background: linear-gradient(95deg, #1B5E20, #4CAF50) !important; }
+    #branding h1 a { color: white !important; font-size: 20px !important; }
+    .module h2 { background: #2E7D32 !important; color: white !important; }
+    .button, input[type=submit] { background: #4CAF50 !important; border-radius: 5px !important; border: none !important; }
+    .button:hover, input[type=submit]:hover { background: #1B5E20 !important; }
+    a:link, a:visited { color: #2E7D32 !important; }
+    .submit-row input { background: #4CAF50 !important; }
+    .addlink, .changelink { color: #2E7D32 !important; }
+    .dashboard #content { background: #f9f9f9; }
+    .dashboard .module table { border-radius: 8px; overflow: hidden; }
+</style>
+"""
 
-# Register models
+# Inject CSS into admin base template
+admin.site.index_template = None
+admin.site.login_template = None
+
+# Monkey patch to add CSS
+original_each_context = admin.site.each_context
+def each_context(self, request):
+    context = original_each_context(request)
+    context['extra_head'] = extra_css
+    return context
+admin.site.each_context = each_context
+
 @admin.register(Mission)
 class MissionAdmin(admin.ModelAdmin):
     list_display = ['title', 'location', 'date', 'spots_available', 'status', 'status_badge']
