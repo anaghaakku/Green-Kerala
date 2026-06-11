@@ -1,0 +1,8 @@
+services:
+  - type: static
+    name: harithamission-frontend
+    staticPublishPath: ./build
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

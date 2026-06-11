@@ -1,12 +1,7 @@
-/* HarithaMission Admin Custom CSS */ 
-#header { background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 100%) !important; } 
-#branding h1 a { color: white !important; font-size: 22px !important; } 
+#header { 
+    background: linear-gradient(95deg, #1B5E20, #4CAF50) !important; 
+} 
+#branding h1 a { color: white !important; } 
 .module h2 { background: #2E7D32 !important; color: white !important; } 
+.button, input[type=submit] { background-color: #4CAF50 !important; } 
 a:link { color: #2E7D32 !important; } 
-.button, input[type=submit] { background: #4CAF50 !important; border: none !important; } 
-.button:hover, input[type=submit]:hover { background: #1B5E20 !important; } 
-thead th { background: #E8F5E9 !important; color: #1B5E20 !important; } 
-tbody tr:hover { background: #F1F8E9 !important; } 
-.success { background: #E8F5E9 !important; border-left: 5px solid #4CAF50 !important; } 
-.errornote { background: #FFEBEE !important; border-left: 5px solid #F44336 !important; } 
-gunicorn==23.0.0
