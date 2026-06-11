@@ -55,6 +55,11 @@ TEMPLATES = [
     },
 ]
 
+ADMIN_SITE_HEADER = "HarithaMission Admin"
+ADMIN_SITE_TITLE = "HarithaMission"
+ADMIN_INDEX_TITLE = "Welcome to HarithaMission Dashboard"
+
+
 WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
@@ -78,6 +83,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -106,7 +113,10 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
+ADMIN_MEDIA_PREFIX = '/static/admin/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'HarithaMission <noreply@harithamission.org>'
 
+ADMIN_SITE_HEADER = "HarithaMission Admin"
+ADMIN_SITE_TITLE = "HarithaMission"
