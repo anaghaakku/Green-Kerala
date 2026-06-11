@@ -1,46 +1,57 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import (
     Mission, Volunteer, WastePickup, MissionRegistration,
     ContactMessage, Reward, RewardRedemption
 )
 
-# Don't import Staff from here - Staff is in staffapp
-
 @admin.register(Mission)
 class MissionAdmin(admin.ModelAdmin):
-    list_display = ['title', 'location', 'date', 'spots_available', 'spots_total', 'status']
+    list_display = ['title', 'location', 'date', 'spots_available', 'status', 'status_badge']
     list_filter = ['status', 'location', 'date']
     search_fields = ['title', 'description', 'location']
     list_editable = ['spots_available', 'status']
     date_hierarchy = 'date'
+    
+    def status_badge(self, obj):
+        colors = {
+            'upcoming': '#FF9800',
+            'ongoing': '#2196F3',
+            'completed': '#4CAF50',
+            'cancelled': '#F44336'
+        }
+        return format_html('<span style="background: {}; color: white; padding: 3px 10px; border-radius: 15px;">{}</span>', 
+                          colors.get(obj.status, '#999'), obj.status.upper())
+    status_badge.short_description = 'Status'
 
 @admin.register(Volunteer)
 class VolunteerAdmin(admin.ModelAdmin):
-    list_display = ['user', 'phone', 'city', 'total_points', 'total_hours', 'joined_date']
-    list_filter = ['city', 'joined_date', 'is_active']
-    search_fields = ['user__username', 'user__email', 'phone', 'city']
-    list_editable = ['total_points', 'total_hours']
+    list_display = ['user', 'phone', 'city', 'total_points', 'is_active']
+    list_filter = ['city', 'is_active']
+    search_fields = ['user__username', 'phone', 'city']
+    list_editable = ['total_points']
+    list_per_page = 25
 
 @admin.register(WastePickup)
 class WastePickupAdmin(admin.ModelAdmin):
-    list_display = ['id', 'volunteer', 'waste_type', 'estimated_weight', 'points_earned', 'status', 'preferred_date']
-    list_filter = ['status', 'waste_type', 'preferred_date', 'city']
-    search_fields = ['volunteer__user__username', 'address', 'city']
-    list_editable = ['status', 'points_earned']
-    date_hierarchy = 'preferred_date'
+    list_display = ['id', 'volunteer', 'waste_type', 'points_earned', 'status', 'preferred_date']
+    list_filter = ['status', 'waste_type', 'preferred_date']
+    search_fields = ['volunteer__user__username', 'address']
+    list_editable = ['status']
+    list_per_page = 25
 
 @admin.register(MissionRegistration)
 class MissionRegistrationAdmin(admin.ModelAdmin):
-    list_display = ['volunteer', 'mission', 'registered_date', 'status', 'hours_contributed']
+    list_display = ['volunteer', 'mission', 'registered_date', 'status']
     list_filter = ['status', 'registered_date']
     search_fields = ['volunteer__user__username', 'mission__title']
-    list_editable = ['status', 'hours_contributed']
+    list_editable = ['status']
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
     list_display = ['name', 'email', 'subject', 'created_at', 'is_read']
     list_filter = ['is_read', 'created_at']
-    search_fields = ['name', 'email', 'subject', 'message']
+    search_fields = ['name', 'email', 'subject']
     list_editable = ['is_read']
 
 @admin.register(Reward)
