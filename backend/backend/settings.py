@@ -120,3 +120,20 @@ DEFAULT_FROM_EMAIL = 'HarithaMission <noreply@harithamission.org>'
 
 ADMIN_SITE_HEADER = "HarithaMission Admin"
 ADMIN_SITE_TITLE = "HarithaMission"
+
+# CSRF and CORS Settings for Render
+CSRF_TRUSTED_ORIGINS = [
+    'https://green-kerala-api.onrender.com',
+    'https://*.onrender.com',
+    'http://localhost:8000',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'https://green-kerala-api.onrender.com',
+    'https://*.onrender.com',
+    'http://localhost:3000',
+]
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
