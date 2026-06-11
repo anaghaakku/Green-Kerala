@@ -4,6 +4,12 @@ from .models import (
     Mission, Volunteer, WastePickup, MissionRegistration,
     ContactMessage, Reward, RewardRedemption
 )
+from django.contrib import admin
+from django.utils.html import format_html
+from .models import (
+    Mission, Volunteer, WastePickup, MissionRegistration,
+    ContactMessage, Reward, RewardRedemption
+)
 
 # Customize Admin Panel Header
 admin.site.site_header = "🌿 HarithaMission Admin Panel"
