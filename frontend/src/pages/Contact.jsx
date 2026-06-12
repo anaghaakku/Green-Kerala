@@ -1,5 +1,6 @@
 // import { useState } from 'react';
 // import axios from 'axios';
+// import emailjs from '@emailjs/browser';
 
 // const Contact = () => {
 //     const [formData, setFormData] = useState({
@@ -10,6 +11,13 @@
 //     });
 //     const [status, setStatus] = useState('');
 //     const [loading, setLoading] = useState(false);
+//     const [subscribeEmail, setSubscribeEmail] = useState('');
+//     const [subscribeStatus, setSubscribeStatus] = useState('');
+
+//     // EmailJS Configuration - Your Credentials
+//     const EMAILJS_SERVICE_ID = 'service_cwwm10q';
+//     const EMAILJS_TEMPLATE_ID = 'template_bl7gsgd';
+//     const EMAILJS_PUBLIC_KEY = 'lDpMqjfm5yb5QYi9M';
 
 //     const handleChange = (e) => {
 //         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,6 +41,38 @@
 //         }
 //     };
 
+//     // Subscribe to newsletter using EmailJS
+//     const handleSubscribe = async (e) => {
+//         e.preventDefault();
+//         if (!subscribeEmail) {
+//             setSubscribeStatus('error');
+//             setTimeout(() => setSubscribeStatus(''), 3000);
+//             return;
+//         }
+
+//         setSubscribeStatus('loading');
+
+//         try {
+//             const templateParams = {
+//                 to_email: subscribeEmail,
+//                 from_name: 'HarithaMission',
+//                 message: 'Thank you for subscribing to our newsletter! You will receive updates about eco-missions, waste pickups, and rewards.',
+//                 reply_to: subscribeEmail,
+//                 user_email: subscribeEmail,
+//                 subject: 'Welcome to HarithaMission Newsletter!'
+//             };
+
+//             await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+//             setSubscribeStatus('success');
+//             setSubscribeEmail('');
+//             setTimeout(() => setSubscribeStatus(''), 5000);
+//         } catch (error) {
+//             console.error('EmailJS error:', error);
+//             setSubscribeStatus('error');
+//             setTimeout(() => setSubscribeStatus(''), 3000);
+//         }
+//     };
+
 //     const contactInfo = [
 //         { icon: '📍', title: 'Head Office', detail: 'Green Valley, Kochi, Kerala - 682001', color: '#4CAF50' },
 //         { icon: '📞', title: 'Phone', detail: '+91 98765 43210', color: '#2196F3', sub: 'Mon-Fri, 9AM - 6PM' },
@@ -41,12 +81,12 @@
 //     ];
 
 //     const socialLinks = [
-//         { name: 'Facebook', icon: '📘', url: '#', color: '#1877F2' },
-//         { name: 'Twitter', icon: '🐦', url: '#', color: '#1DA1F2' },
-//         { name: 'Instagram', icon: '📸', url: '#', color: '#E4405F' },
-//         { name: 'LinkedIn', icon: '💼', url: '#', color: '#0077B5' },
-//         { name: 'YouTube', icon: '📺', url: '#', color: '#FF0000' },
-//         { name: 'WhatsApp', icon: '💬', url: '#', color: '#25D366' }
+//         { name: 'Facebook', icon: '📘', url: 'https://facebook.com', color: '#1877F2' },
+//         { name: 'Twitter', icon: '🐦', url: 'https://twitter.com', color: '#1DA1F2' },
+//         { name: 'Instagram', icon: '📸', url: 'https://instagram.com', color: '#E4405F' },
+//         { name: 'LinkedIn', icon: '💼', url: 'https://linkedin.com', color: '#0077B5' },
+//         { name: 'YouTube', icon: '📺', url: 'https://youtube.com', color: '#FF0000' },
+//         { name: 'WhatsApp', icon: '💬', url: 'https://wa.me/919876543210', color: '#25D366' }
 //     ];
 
 //     const faqItems = [
@@ -252,11 +292,32 @@
 //                                 <p>Get latest updates, eco-tips, and mission announcements directly in your inbox.</p>
 //                                 <div className="row justify-content-center">
 //                                     <div className="col-md-6">
-//                                         <div className="input-group">
-//                                             <input type="email" className="form-control form-control-lg" placeholder="Your email address" />
-//                                             <button className="btn btn-success btn-lg px-4">Subscribe</button>
-//                                         </div>
-//                                         <small className="text-muted mt-2 d-block">No spam, unsubscribe anytime.</small>
+//                                         <form onSubmit={handleSubscribe} className="d-flex flex-column gap-2">
+//                                             <div className="input-group">
+//                                                 <input 
+//                                                     type="email" 
+//                                                     className="form-control form-control-lg" 
+//                                                     placeholder="Your email address" 
+//                                                     value={subscribeEmail}
+//                                                     onChange={(e) => setSubscribeEmail(e.target.value)}
+//                                                     required 
+//                                                 />
+//                                                 <button 
+//                                                     type="submit" 
+//                                                     className="btn btn-success btn-lg px-4"
+//                                                     disabled={subscribeStatus === 'loading'}
+//                                                 >
+//                                                     {subscribeStatus === 'loading' ? 'Subscribing...' : 'Subscribe'}
+//                                                 </button>
+//                                             </div>
+//                                             {subscribeStatus === 'success' && (
+//                                                 <div className="alert alert-success py-2 mt-2">✅ Subscribed successfully! Check your email.</div>
+//                                             )}
+//                                             {subscribeStatus === 'error' && (
+//                                                 <div className="alert alert-danger py-2 mt-2">❌ Please enter a valid email address.</div>
+//                                             )}
+//                                             <small className="text-muted">No spam, unsubscribe anytime.</small>
+//                                         </form>
 //                                     </div>
 //                                 </div>
 //                             </div>
@@ -269,6 +330,7 @@
 // };
 
 // export default Contact;
+
 
 
 import { useState } from 'react';
@@ -289,7 +351,7 @@ const Contact = () => {
 
     // EmailJS Configuration - Your Credentials
     const EMAILJS_SERVICE_ID = 'service_cwwm10q';
-    const EMAILJS_TEMPLATE_ID = 'template_bl7gsg';
+    const EMAILJS_TEMPLATE_ID = 'bvdcc9';
     const EMAILJS_PUBLIC_KEY = 'lDpMqjfm5yb5QYi9M';
 
     const handleChange = (e) => {
@@ -302,11 +364,25 @@ const Contact = () => {
         setStatus('');
 
         try {
+            // Save to backend
             await axios.post('https://green-kerala-api.onrender.com/api/contact/', formData);
+            
+            // Send email via EmailJS
+            const templateParams = {
+                to_email: 'anaghaakku834@gmail.com',
+                from_name: formData.name,
+                reply_to: formData.email,
+                subject: formData.subject,
+                message: formData.message
+            };
+            
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams, EMAILJS_PUBLIC_KEY);
+            
             setStatus('success');
             setFormData({ name: '', email: '', subject: '', message: '' });
             setTimeout(() => setStatus(''), 5000);
         } catch (error) {
+            console.error('Error:', error);
             setStatus('error');
             setTimeout(() => setStatus(''), 5000);
         } finally {
@@ -329,7 +405,7 @@ const Contact = () => {
             const templateParams = {
                 to_email: subscribeEmail,
                 from_name: 'HarithaMission',
-                message: 'Thank you for subscribing to our newsletter! You will receive updates about eco-missions, waste pickups, and rewards.',
+                message: 'Thank you for subscribing to HarithaMission newsletter! You will receive updates about eco-missions, waste pickups, and rewards.',
                 reply_to: subscribeEmail,
                 user_email: subscribeEmail,
                 subject: 'Welcome to HarithaMission Newsletter!'
