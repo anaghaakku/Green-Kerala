@@ -10,6 +10,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import WastePickup from './pages/WastePickup';
 import Rewards from './pages/Rewards';
+import Missions from './pages/Missions';
 import CompostGuide from './pages/CompostGuide';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -30,6 +31,7 @@ function App() {
                             <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                             <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />
                             <Route path="/contact" element={<ProtectedRoute><Contact /></ProtectedRoute>} />
+                            <Route path="/missions" element={<ProtectedRoute><Missions /></ProtectedRoute>} />
                             <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
                             <Route path="/compost-guide" element={<ProtectedRoute><CompostGuide /></ProtectedRoute>} />
                             <Route path="/waste-pickup" element={<ProtectedRoute><WastePickup /></ProtectedRoute>} />
