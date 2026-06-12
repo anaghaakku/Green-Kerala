@@ -8,6 +8,7 @@ const Rewards = () => {
     const [loading, setLoading] = useState(true);
     const [userPoints, setUserPoints] = useState(1250);
     const [redeemedMessage, setRedeemedMessage] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all'); // Add this
 
     useEffect(() => {
         fetchRewards();
@@ -20,7 +21,6 @@ const Rewards = () => {
             if (Array.isArray(response.data)) {
                 setRewards(response.data);
             } else {
-                // Fallback default rewards if API returns nothing
                 setRewards([
                     { id: 1, name: 'Organic Seed Packets', category: 'eco', description: 'Heirloom vegetable seeds', points_required: 100, icon: '🌱', stock: 50, is_popular: true },
                     { id: 2, name: 'Native Tree Sapling', category: 'eco', description: 'Mango, Jackfruit or Guava sapling', points_required: 250, icon: '🌳', stock: 30, is_popular: true },
@@ -34,7 +34,6 @@ const Rewards = () => {
             }
         } catch (error) {
             console.error('Error fetching rewards:', error);
-            // Set default rewards on error
             setRewards([
                 { id: 1, name: 'Organic Seed Packets', category: 'eco', description: 'Heirloom vegetable seeds', points_required: 100, icon: '🌱', stock: 50, is_popular: true },
                 { id: 2, name: 'Native Tree Sapling', category: 'eco', description: 'Fruit tree sapling', points_required: 250, icon: '🌳', stock: 30, is_popular: true },
@@ -75,24 +74,23 @@ const Rewards = () => {
         }
     };
 
-    // Handle View Challenge button
     const handleViewChallenge = () => {
-        alert("🎯 Weekly Challenge: Collect 10kg waste this week!\n\nCurrent progress: 4kg/10kg\n\nComplete the challenge to earn 100 bonus points!\n\nSchedule a waste pickup today!");
+        alert("🎯 Weekly Challenge: Collect 10kg waste this week!\n\nCurrent progress: 4kg/10kg\n\nComplete the challenge to earn 100 bonus points!");
     };
 
-    // Handle Redeem Offer button
     const handleRedeemOffer = () => {
-        alert("⚡ Limited Time Offer!\n\nDouble points on all waste pickups!\n\nValid for next 3 days only.\n\nSchedule a pickup now to earn DOUBLE points!");
+        alert("⚡ Limited Time Offer!\n\nDouble points on all waste pickups!\n\nValid for next 3 days only.\n\nSchedule a pickup now to earn double points!");
     };
 
+    // Filter rewards based on selected category
     const getFilteredRewards = () => {
-        return rewards;
+        if (selectedCategory === 'all') {
+            return rewards;
+        }
+        return rewards.filter(reward => reward.category === selectedCategory);
     };
 
     const filteredRewards = getFilteredRewards();
-    const ecoRewards = rewards.filter(r => r.category === 'eco');
-    const merchandiseRewards = rewards.filter(r => r.category === 'merchandise');
-    const vouchersRewards = rewards.filter(r => r.category === 'vouchers');
 
     if (loading) {
         return (
@@ -137,16 +135,28 @@ const Rewards = () => {
             {/* Category Filter */}
             <div className="mb-5">
                 <div className="d-flex flex-wrap justify-content-center gap-3">
-                    <button className="btn btn-success btn-lg px-4 py-2 rounded-pill fw-bold shadow">
+                    <button 
+                        onClick={() => setSelectedCategory('all')}
+                        className={`btn btn-lg px-4 py-2 rounded-pill fw-bold ${selectedCategory === 'all' ? 'btn-success text-white shadow' : 'btn-outline-success'}`}
+                    >
                         ✨ All Rewards
                     </button>
-                    <button className="btn btn-outline-success btn-lg px-4 py-2 rounded-pill fw-bold">
+                    <button 
+                        onClick={() => setSelectedCategory('eco')}
+                        className={`btn btn-lg px-4 py-2 rounded-pill fw-bold ${selectedCategory === 'eco' ? 'btn-success text-white shadow' : 'btn-outline-success'}`}
+                    >
                         🌱 Eco Products
                     </button>
-                    <button className="btn btn-outline-success btn-lg px-4 py-2 rounded-pill fw-bold">
+                    <button 
+                        onClick={() => setSelectedCategory('merchandise')}
+                        className={`btn btn-lg px-4 py-2 rounded-pill fw-bold ${selectedCategory === 'merchandise' ? 'btn-success text-white shadow' : 'btn-outline-success'}`}
+                    >
                         👕 Merchandise
                     </button>
-                    <button className="btn btn-outline-success btn-lg px-4 py-2 rounded-pill fw-bold">
+                    <button 
+                        onClick={() => setSelectedCategory('vouchers')}
+                        className={`btn btn-lg px-4 py-2 rounded-pill fw-bold ${selectedCategory === 'vouchers' ? 'btn-success text-white shadow' : 'btn-outline-success'}`}
+                    >
                         🎫 Vouchers & Events
                     </button>
                 </div>
@@ -155,7 +165,12 @@ const Rewards = () => {
             {/* Rewards Grid */}
             <div className="row g-4 mb-5">
                 <div className="col-12">
-                    <h3 className="fw-bold mb-4">🎁 All Rewards</h3>
+                    <h3 className="fw-bold mb-4">
+                        {selectedCategory === 'all' && '🎁 All Rewards'}
+                        {selectedCategory === 'eco' && '🌱 Eco Products'}
+                        {selectedCategory === 'merchandise' && '👕 HarithaMission Merchandise'}
+                        {selectedCategory === 'vouchers' && '🎫 Vouchers & Events'}
+                    </h3>
                 </div>
                 
                 {filteredRewards.map(reward => (
@@ -286,18 +301,8 @@ const Rewards = () => {
                                     <div className="display-1 mb-3">🎯</div>
                                     <h3 className="fw-bold mb-3">Weekly Challenge</h3>
                                     <p className="lead">Collect 10kg waste this week</p>
-                                    <div className="mt-3">
-                                        <div className="progress mb-2" style={{ height: '8px' }}>
-                                            <div className="progress-bar bg-warning" style={{ width: '40%' }}></div>
-                                        </div>
-                                        <small>4kg collected / 10kg target</small>
-                                    </div>
-                                    <button 
-                                        onClick={handleViewChallenge}
-                                        className="btn btn-light text-success fw-bold mt-4 rounded-pill px-4"
-                                    >
-                                        View Challenge →
-                                    </button>
+                                    <div className="mt-3"><div className="progress mb-2" style={{ height: '8px' }}><div className="progress-bar bg-warning" style={{ width: '40%' }}></div></div><small>4kg collected / 10kg target</small></div>
+                                    <button onClick={handleViewChallenge} className="btn btn-light text-success fw-bold mt-4 rounded-pill px-4">View Challenge →</button>
                                 </div>
                             </div>
                             <div className="col-md-6" style={{ background: 'linear-gradient(135deg, #FF9800, #F57C00)' }}>
@@ -305,15 +310,8 @@ const Rewards = () => {
                                     <div className="display-1 mb-3">⚡</div>
                                     <h3 className="fw-bold mb-3">Limited Time Offer</h3>
                                     <p className="lead">Double points on all waste pickups!</p>
-                                    <div className="mt-3">
-                                        <span className="badge bg-light text-warning fs-6 px-4 py-2 rounded-pill">Ends in 3 days</span>
-                                    </div>
-                                    <button 
-                                        onClick={handleRedeemOffer}
-                                        className="btn btn-light text-warning fw-bold mt-4 rounded-pill px-4"
-                                    >
-                                        Redeem Offer →
-                                    </button>
+                                    <div className="mt-3"><span className="badge bg-light text-warning fs-6 px-4 py-2 rounded-pill">Ends in 3 days</span></div>
+                                    <button onClick={handleRedeemOffer} className="btn btn-light text-warning fw-bold mt-4 rounded-pill px-4">Redeem Offer →</button>
                                 </div>
                             </div>
                         </div>
