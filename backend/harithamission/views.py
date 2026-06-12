@@ -120,6 +120,32 @@ def remove_admin(request, user_id):
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=404)
 
+# ========== VOLUNTEER PROFILE VIEWS ==========
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_volunteer_profile(request):
+    """Get volunteer profile with points for the logged-in user"""
+    try:
+        volunteer = Volunteer.objects.get(user=request.user)
+        return Response({
+            'total_points': volunteer.total_points,
+            'total_pickups': WastePickup.objects.filter(volunteer=volunteer).count(),
+            'total_hours': volunteer.total_hours,
+            'joined_date': volunteer.joined_date,
+            'is_active': volunteer.is_active
+        })
+    except Volunteer.DoesNotExist:
+        # Create volunteer profile if it doesn't exist
+        volunteer = Volunteer.objects.create(user=request.user)
+        return Response({
+            'total_points': 0,
+            'total_pickups': 0,
+            'total_hours': 0,
+            'joined_date': volunteer.joined_date,
+            'is_active': volunteer.is_active
+        })
+
 # ========== MISSION VIEWS ==========
 
 class MissionViewSet(viewsets.ModelViewSet):
