@@ -55,7 +55,7 @@ class WastePickupSerializer(serializers.ModelSerializer):
     class Meta:
         model = WastePickup
         fields = '__all__'
-        read_only_fields = ['points_earned', 'created_at']
+        read_only_fields = ['volunteer', 'points_earned', 'created_at']
 
 class MissionRegistrationSerializer(serializers.ModelSerializer):
     volunteer_name = serializers.CharField(source='volunteer.user.username', read_only=True)
