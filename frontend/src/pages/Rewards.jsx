@@ -6,9 +6,10 @@ const Rewards = () => {
     const { user } = useAuth();
     const [rewards, setRewards] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [userPoints, setUserPoints] = useState(1250);
+    const [userPoints, setUserPoints] = useState(0);
     const [redeemedMessage, setRedeemedMessage] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('all'); // Add this
+    const [selectedCategory, setSelectedCategory] = useState('all');
+    const [pointsLoading, setPointsLoading] = useState(true);
 
     useEffect(() => {
         fetchRewards();
@@ -50,16 +51,31 @@ const Rewards = () => {
     };
 
     const fetchUserPoints = async () => {
+        setPointsLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            if (token) {
-                const response = await axios.get('https://green-kerala-api.onrender.com/api/volunteer-profile/', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setUserPoints(response.data.total_points || 1250);
+            console.log('Fetching points with token:', token ? 'Token exists' : 'No token');
+            
+            if (!token) {
+                console.log('No token found, setting points to 0');
+                setUserPoints(0);
+                setPointsLoading(false);
+                return;
             }
+            
+            const response = await axios.get('https://green-kerala-api.onrender.com/api/volunteer-profile/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            console.log('Points API response:', response.data);
+            const points = response.data.total_points || 0;
+            setUserPoints(points);
+            
         } catch (error) {
-            console.error('Error fetching points:', error);
+            console.error('Error fetching points:', error.response?.data || error.message);
+            setUserPoints(0);
+        } finally {
+            setPointsLoading(false);
         }
     };
 
@@ -82,7 +98,6 @@ const Rewards = () => {
         alert("⚡ Limited Time Offer!\n\nDouble points on all waste pickups!\n\nValid for next 3 days only.\n\nSchedule a pickup now to earn double points!");
     };
 
-    // Filter rewards based on selected category
     const getFilteredRewards = () => {
         if (selectedCategory === 'all') {
             return rewards;
@@ -103,9 +118,11 @@ const Rewards = () => {
         );
     }
 
+    // Show loading for points
+    const displayPoints = pointsLoading ? '...' : userPoints.toLocaleString();
+
     return (
         <div className="container py-5">
-            {/* Success/Error Message */}
             {redeemedMessage && (
                 <div className={`alert ${redeemedMessage.includes('Success') ? 'alert-success' : 'alert-danger'} text-center shadow-lg mb-4`} 
                      style={{ position: 'sticky', top: '20px', zIndex: 1000 }}>
@@ -121,7 +138,7 @@ const Rewards = () => {
                         <span className="display-1">🏆</span>
                     </div>
                     <h2 className="fw-bold mb-2">Your Eco Points Balance</h2>
-                    <div className="display-1 fw-bold my-3">{userPoints.toLocaleString()}</div>
+                    <div className="display-1 fw-bold my-3">{displayPoints}</div>
                     <p className="lead mb-0">🌟 Keep up the great work! You're making a difference.</p>
                     <div className="mt-4">
                         <div className="progress" style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.3)' }}>
