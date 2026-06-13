@@ -10,66 +10,42 @@ const Rewards = () => {
     const [loading, setLoading] = useState(true);
     const [redeemedMessage, setRedeemedMessage] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
+    const [fetchError, setFetchError] = useState(null);
 
-    // Updated icon function with proper mapping
     const getIconForCategory = (category, name) => {
         const rewardName = (name || '').toLowerCase();
         const cat = (category || '').toLowerCase();
         
-        // Cap specific - 🧢
-        if (rewardName.includes('cap') || rewardName.includes('hat')) {
-            return '🧢';
-        }
-        
-        // T-Shirt specific - 👕
-        if (rewardName.includes('t-shirt') || rewardName.includes('tshirt') || rewardName.includes('shirt')) {
-            return '👕';
-        }
-        
-        // Backpack specific - 🎒
-        if (rewardName.includes('backpack') || rewardName.includes('bag')) {
-            return '🎒';
-        }
-        
-        // Cutlery set - 🍴
-        if (rewardName.includes('cutlery') || rewardName.includes('fork') || rewardName.includes('spoon') || rewardName.includes('bamboo')) {
-            return '🍴';
-        }
-        
-        // Notebook / Paper - 📓
-        if (rewardName.includes('notebook') || rewardName.includes('paper') || rewardName.includes('book')) {
-            return '📓';
-        }
-        
-        // Seeds / Plants - 🌱
-        if (rewardName.includes('seed') || rewardName.includes('plant') || rewardName.includes('tree') || rewardName.includes('organic') || cat === 'eco') {
-            return '🌱';
-        }
-        
-        // Vouchers / Events - 🎫
+        if (rewardName.includes('cap') || rewardName.includes('hat')) return '🧢';
+        if (rewardName.includes('t-shirt') || rewardName.includes('tshirt') || rewardName.includes('shirt')) return '👕';
+        if (rewardName.includes('backpack') || rewardName.includes('bag')) return '🎒';
+        if (rewardName.includes('cutlery') || rewardName.includes('fork') || rewardName.includes('spoon') || rewardName.includes('bamboo')) return '🍴';
+        if (rewardName.includes('notebook') || rewardName.includes('paper') || rewardName.includes('book')) return '📓';
+        if (rewardName.includes('seed') || rewardName.includes('plant') || rewardName.includes('tree') || rewardName.includes('organic') || cat === 'eco') return '🌱';
         if (rewardName.includes('voucher') || rewardName.includes('workshop') || rewardName.includes('meal') || 
-            rewardName.includes('event') || rewardName.includes('pass') || cat === 'vouchers') {
-            return '🎫';
-        }
-        
-        // Merchandise default - 👕
-        if (cat === 'merchandise') {
-            return '👕';
-        }
-        
+            rewardName.includes('event') || rewardName.includes('pass') || cat === 'vouchers') return '🎫';
+        if (cat === 'merchandise') return '👕';
         return '🎁';
     };
 
     const fetchRewards = useCallback(async () => {
         try {
+            setFetchError(null);
             const token = localStorage.getItem('access_token');
             
+            // Add cache-busting parameter to prevent caching
             const response = await axios.get(`https://green-kerala-api.onrender.com/api/rewards/?_=${Date.now()}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {}
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                params: {
+                    t: new Date().getTime() // Force no cache
+                }
             });
+            
+            console.log('API Response for rewards:', response.data);
             
             let rewardsArray = [];
             
+            // Handle different response formats
             if (Array.isArray(response.data)) {
                 rewardsArray = response.data;
             } else if (response.data.results && Array.isArray(response.data.results)) {
@@ -77,6 +53,9 @@ const Rewards = () => {
             } else if (response.data.data && Array.isArray(response.data.data)) {
                 rewardsArray = response.data.data;
             }
+            
+            console.log('Rewards array length:', rewardsArray.length);
+            console.log('Rewards data:', rewardsArray);
             
             if (rewardsArray.length > 0) {
                 const mappedRewards = rewardsArray.map(reward => ({
@@ -90,37 +69,53 @@ const Rewards = () => {
                     is_popular: reward.is_popular || false
                 }));
                 setRewards(mappedRewards);
+                // Store in sessionStorage for this session
+                sessionStorage.setItem('cached_rewards', JSON.stringify(mappedRewards));
+                sessionStorage.setItem('rewards_timestamp', Date.now().toString());
             } else {
-                setRewards([]);
+                // Try to load from session cache if API returns empty
+                const cachedRewards = sessionStorage.getItem('cached_rewards');
+                if (cachedRewards) {
+                    console.log('Using cached rewards from session');
+                    setRewards(JSON.parse(cachedRewards));
+                } else {
+                    console.warn('No rewards from API and no cache');
+                    setRewards([]);
+                }
             }
             
         } catch (error) {
             console.error('Error fetching rewards:', error);
-            setRewards([]);
+            setFetchError(error.message);
+            
+            // Try to load from session cache on error
+            const cachedRewards = sessionStorage.getItem('cached_rewards');
+            if (cachedRewards) {
+                console.log('Using cached rewards due to API error');
+                setRewards(JSON.parse(cachedRewards));
+            } else {
+                setRewards([]);
+            }
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // Auto-refresh every 10 seconds
+    // Auto-refresh every 15 seconds
     useEffect(() => {
         fetchRewards();
-        refreshPoints(); // Refresh points from context
+        refreshPoints();
         
         const interval = setInterval(() => {
+            console.log('Auto-refreshing rewards...');
             fetchRewards();
             refreshPoints();
-        }, 10000);
+        }, 15000);
         
         return () => clearInterval(interval);
     }, [fetchRewards, refreshPoints]);
 
-    // FIXED: Redemption with PointsContext
     const handleRedeem = async (reward) => {
-        console.log('Redeeming reward:', reward);
-        console.log('User points:', points);
-        console.log('Points required:', reward.points_required);
-        
         if (points >= reward.points_required) {
             try {
                 const token = localStorage.getItem('access_token');
@@ -130,61 +125,30 @@ const Rewards = () => {
                     return;
                 }
                 
-                // Try different request formats
-                const formatsToTry = [
+                const response = await axios.post(
+                    'https://green-kerala-api.onrender.com/api/redemptions/', 
                     { reward: reward.id },
-                    { reward_id: reward.id },
-                    { reward: reward.id, points_spent: reward.points_required },
-                    { id: reward.id, reward_id: reward.id }
-                ];
-                
-                let success = false;
-                let lastError = null;
-                
-                for (const data of formatsToTry) {
-                    try {
-                        console.log('Trying format:', data);
-                        const response = await axios.post(
-                            'https://green-kerala-api.onrender.com/api/redemptions/', 
-                            data,
-                            { 
-                                headers: { 
-                                    Authorization: `Bearer ${token}`,
-                                    'Content-Type': 'application/json'
-                                } 
-                            }
-                        );
-                        console.log('Success with format:', data, response.data);
-                        success = true;
-                        
-                        // Deduct points using PointsContext
-                        deductPoints(reward.points_required);
-                        
-                        setRedeemedMessage(`🎉 Success! You redeemed: ${reward.name}!`);
-                        fetchRewards(); // Refresh to update stock
-                        refreshPoints(); // Refresh points
-                        break;
-                    } catch (err) {
-                        lastError = err;
-                        console.log('Failed with format:', data, err.response?.data);
+                    { 
+                        headers: { 
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        } 
                     }
-                }
+                );
                 
-                if (!success) {
-                    throw lastError;
+                console.log('Redemption response:', response.data);
+                
+                if (response.status === 200 || response.status === 201) {
+                    deductPoints(reward.points_required);
+                    setRedeemedMessage(`🎉 Success! You redeemed: ${reward.name}!`);
+                    fetchRewards(); // Refresh rewards
+                    refreshPoints(); // Refresh points
                 }
                 
             } catch (error) {
                 console.error('Redemption error:', error);
-                console.error('Error response:', error.response?.data);
-                
-                if (error.response?.status === 404) {
-                    setRedeemedMessage(`❌ API endpoint not found. Please contact support.`);
-                } else if (error.response?.status === 401) {
-                    setRedeemedMessage(`❌ Please login again to redeem rewards.`);
-                } else if (error.response?.status === 400) {
-                    const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Invalid request';
-                    setRedeemedMessage(`❌ ${errorMsg}`);
+                if (error.response?.data?.error) {
+                    setRedeemedMessage(`❌ ${error.response.data.error}`);
                 } else {
                     setRedeemedMessage(`❌ Failed to redeem. Please try again.`);
                 }
@@ -246,6 +210,17 @@ const Rewards = () => {
 
     return (
         <div className="container py-5">
+            {/* Debug info - remove in production */}
+            {fetchError && (
+                <div className="alert alert-warning text-center small">
+                    ⚠️ Using cached rewards. API Error: {fetchError}
+                </div>
+            )}
+            
+            <div className="alert alert-info text-center small">
+                📦 Total Rewards Available: {rewards.length}
+            </div>
+
             {redeemedMessage && (
                 <div className={`alert ${redeemedMessage.includes('Success') ? 'alert-success' : 'alert-danger'} text-center shadow-lg mb-4`}>
                     <strong>{redeemedMessage}</strong>
@@ -295,6 +270,10 @@ const Rewards = () => {
                         <div className="alert alert-info">
                             <h4>🎁 No Rewards Available Yet</h4>
                             <p>Check back soon for exciting eco-friendly rewards!</p>
+                            <hr />
+                            <button onClick={fetchRewards} className="btn btn-primary btn-sm">
+                                🔄 Refresh Rewards
+                            </button>
                         </div>
                     </div>
                 ) : (
@@ -325,6 +304,7 @@ const Rewards = () => {
                 )}
             </div>
 
+            {/* Rest of your component remains the same... */}
             {/* Ways to Earn Points */}
             <div className="row g-4 mt-3">
                 <div className="col-lg-6">
