@@ -8,10 +8,10 @@ const WastePickup = () => {
     const { points, addPoints, refreshPoints } = usePoints();
     const [formData, setFormData] = useState({
         waste_type: '',
-        estimated_weight: '',  // Changed from 'weight'
+        estimated_weight: '',
         address: '',
-        city: '',              // NEW FIELD
-        pincode: '',           // NEW FIELD
+        city: '',
+        pincode: '',
         preferred_date: '',
         preferred_time: '',
         notes: ''
@@ -28,6 +28,16 @@ const WastePickup = () => {
         'organic': 5,
         'metal': 20
     };
+
+    // Valid weight choices based on backend model
+    const weightChoices = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+    
+    // Valid time choices based on backend model
+    const timeChoices = [
+        '09:00:00', '10:00:00', '11:00:00', '12:00:00',
+        '13:00:00', '14:00:00', '15:00:00', '16:00:00',
+        '17:00:00', '18:00:00'
+    ];
 
     useEffect(() => {
         fetchPickupHistory();
@@ -84,20 +94,25 @@ const WastePickup = () => {
 
             const pointsEarned = calculatePoints(formData.waste_type, formData.estimated_weight);
             
-            // Format time properly (remove seconds if needed)
-            let formattedTime = formData.preferred_time;
-            if (formattedTime && formattedTime.length === 5) {
-                formattedTime = `${formattedTime}:00`; // Add seconds
+            // Format time to match backend choices (HH:MM:SS)
+            let formattedTime = null;
+            if (formData.preferred_time) {
+                // If time is in HH:MM format, add :00 seconds
+                if (formData.preferred_time.length === 5) {
+                    formattedTime = `${formData.preferred_time}:00`;
+                } else {
+                    formattedTime = formData.preferred_time;
+                }
             }
             
             const requestData = {
                 waste_type: formData.waste_type,
-                estimated_weight: parseFloat(formData.estimated_weight),
+                estimated_weight: formData.estimated_weight, // Send as string, not number
                 address: formData.address,
                 city: formData.city,
                 pincode: formData.pincode,
                 preferred_date: formData.preferred_date,
-                preferred_time: formattedTime || null,
+                preferred_time: formattedTime,
                 notes: formData.notes || '',
                 points_earned: pointsEarned,
                 status: 'pending'
@@ -144,8 +159,8 @@ const WastePickup = () => {
                 const errorData = error.response?.data;
                 if (errorData) {
                     const errorMessages = Object.entries(errorData)
-                        .map(([key, value]) => `${key}: ${value}`)
-                        .join(', ');
+                        .map(([key, value]) => `${key}: ${value.join(', ')}`)
+                        .join('; ');
                     setMessage(`❌ ${errorMessages}`);
                 } else {
                     setMessage('❌ Invalid data. Please check your form.');
@@ -225,7 +240,12 @@ const WastePickup = () => {
                                     </div>
                                     <div className="col-md-6 mb-3">
                                         <label className="form-label fw-bold">Estimated Weight (kg) *</label>
-                                        <input type="number" name="estimated_weight" className="form-control" placeholder="Enter weight in kg" step="0.1" value={formData.estimated_weight} onChange={handleChange} required />
+                                        <select name="estimated_weight" className="form-select" value={formData.estimated_weight} onChange={handleChange} required>
+                                            <option value="">Select weight</option>
+                                            {weightChoices.map(weight => (
+                                                <option key={weight} value={weight}>{weight} kg</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
@@ -252,8 +272,15 @@ const WastePickup = () => {
                                     </div>
                                     <div className="col-md-6 mb-3">
                                         <label className="form-label fw-bold">Preferred Time</label>
-                                        <input type="time" name="preferred_time" className="form-control" value={formData.preferred_time} onChange={handleChange} />
-                                        <small className="text-muted">Format: HH:MM (e.g., 14:30)</small>
+                                        <select name="preferred_time" className="form-select" value={formData.preferred_time} onChange={handleChange}>
+                                            <option value="">Select time (optional)</option>
+                                            {timeChoices.map(time => (
+                                                <option key={time} value={time}>
+                                                    {time.substring(0, 5)} {/* Display HH:MM only */}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <small className="text-muted">Available slots: 9 AM - 6 PM</small>
                                     </div>
                                 </div>
 
