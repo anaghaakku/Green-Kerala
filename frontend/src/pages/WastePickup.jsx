@@ -29,14 +29,15 @@ const WastePickup = () => {
         'metal': 20
     };
 
-    // Valid weight choices based on backend model
-    const weightChoices = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+    // Valid weight choices from 1-20
+    const weightChoices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
     
-    // Valid time choices based on backend model
+    // Valid time choices in 24-hour format with seconds
     const timeChoices = [
-        '09:00:00', '10:00:00', '11:00:00', '12:00:00',
-        '13:00:00', '14:00:00', '15:00:00', '16:00:00',
-        '17:00:00', '18:00:00'
+        '09:00:00', '09:30:00', '10:00:00', '10:30:00', '11:00:00', '11:30:00',
+        '12:00:00', '12:30:00', '13:00:00', '13:30:00', '14:00:00', '14:30:00',
+        '15:00:00', '15:30:00', '16:00:00', '16:30:00', '17:00:00', '17:30:00',
+        '18:00:00'
     ];
 
     useEffect(() => {
@@ -63,7 +64,7 @@ const WastePickup = () => {
 
     const calculatePoints = (wasteType, weight) => {
         const pointsPerKg = wastePointsMap[wasteType] || 10;
-        return Math.floor(pointsPerKg * parseFloat(weight || 0));
+        return Math.floor(pointsPerKg * (parseFloat(weight) || 0));
     };
 
     const handleChange = (e) => {
@@ -92,27 +93,18 @@ const WastePickup = () => {
                 return;
             }
 
+            // Calculate points as number
             const pointsEarned = calculatePoints(formData.waste_type, formData.estimated_weight);
             
-            // Format time to match backend choices (HH:MM:SS)
-            let formattedTime = null;
-            if (formData.preferred_time) {
-                // If time is in HH:MM format, add :00 seconds
-                if (formData.preferred_time.length === 5) {
-                    formattedTime = `${formData.preferred_time}:00`;
-                } else {
-                    formattedTime = formData.preferred_time;
-                }
-            }
-            
+            // Prepare request data with correct types
             const requestData = {
                 waste_type: formData.waste_type,
-                estimated_weight: formData.estimated_weight, // Send as string, not number
+                estimated_weight: Number(formData.estimated_weight), // Convert to number
                 address: formData.address,
                 city: formData.city,
                 pincode: formData.pincode,
                 preferred_date: formData.preferred_date,
-                preferred_time: formattedTime,
+                preferred_time: formData.preferred_time || null,
                 notes: formData.notes || '',
                 points_earned: pointsEarned,
                 status: 'pending'
@@ -159,7 +151,7 @@ const WastePickup = () => {
                 const errorData = error.response?.data;
                 if (errorData) {
                     const errorMessages = Object.entries(errorData)
-                        .map(([key, value]) => `${key}: ${value.join(', ')}`)
+                        .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
                         .join('; ');
                     setMessage(`❌ ${errorMessages}`);
                 } else {
@@ -280,7 +272,7 @@ const WastePickup = () => {
                                                 </option>
                                             ))}
                                         </select>
-                                        <small className="text-muted">Available slots: 9 AM - 6 PM</small>
+                                        <small className="text-muted">Available slots: 9:00 AM - 6:00 PM (30 min intervals)</small>
                                     </div>
                                 </div>
 
