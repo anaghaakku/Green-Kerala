@@ -11,11 +11,52 @@ const Rewards = () => {
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [pointsLoading, setPointsLoading] = useState(true);
 
-    const getIconForCategory = (category) => {
+    // Updated icon function with proper mapping
+    const getIconForCategory = (category, name) => {
+        const rewardName = (name || '').toLowerCase();
         const cat = (category || '').toLowerCase();
-        if (cat === 'eco' || cat === 'ecoproducts') return '🌱';
-        if (cat === 'merchandise') return '👕';
-        if (cat === 'vouchers') return '🎫';
+        
+        // Cap specific - 🧢
+        if (rewardName.includes('cap') || rewardName.includes('hat')) {
+            return '🧢';
+        }
+        
+        // T-Shirt specific - 👕
+        if (rewardName.includes('t-shirt') || rewardName.includes('tshirt') || rewardName.includes('shirt')) {
+            return '👕';
+        }
+        
+        // Backpack specific - 🎒
+        if (rewardName.includes('backpack') || rewardName.includes('bag')) {
+            return '🎒';
+        }
+        
+        // Cutlery set - 🍴
+        if (rewardName.includes('cutlery') || rewardName.includes('fork') || rewardName.includes('spoon') || rewardName.includes('bamboo')) {
+            return '🍴';
+        }
+        
+        // Notebook / Paper - 📓
+        if (rewardName.includes('notebook') || rewardName.includes('paper') || rewardName.includes('book')) {
+            return '📓';
+        }
+        
+        // Seeds / Plants - 🌱
+        if (rewardName.includes('seed') || rewardName.includes('plant') || rewardName.includes('tree') || rewardName.includes('organic') || cat === 'eco') {
+            return '🌱';
+        }
+        
+        // Vouchers / Events - 🎫
+        if (rewardName.includes('voucher') || rewardName.includes('workshop') || rewardName.includes('meal') || 
+            rewardName.includes('event') || rewardName.includes('pass') || cat === 'vouchers') {
+            return '🎫';
+        }
+        
+        // Merchandise default - 👕
+        if (cat === 'merchandise') {
+            return '👕';
+        }
+        
         return '🎁';
     };
 
@@ -26,8 +67,6 @@ const Rewards = () => {
             const response = await axios.get(`https://green-kerala-api.onrender.com/api/rewards/?_=${Date.now()}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
-            
-            console.log('API Response:', response.data);
             
             let rewardsArray = [];
             
@@ -46,7 +85,7 @@ const Rewards = () => {
                     category: (reward.category || 'eco').toLowerCase(),
                     description: reward.description || 'No description',
                     points_required: reward.points_required || 100,
-                    icon: getIconForCategory(reward.category),
+                    icon: getIconForCategory(reward.category, reward.name),
                     stock: reward.stock !== undefined ? reward.stock : 999,
                     is_popular: reward.is_popular || false
                 }));
@@ -69,7 +108,6 @@ const Rewards = () => {
         fetchUserPoints();
         
         const interval = setInterval(() => {
-            console.log('Auto-refreshing rewards...');
             fetchRewards();
         }, 10000);
         
@@ -134,29 +172,29 @@ const Rewards = () => {
     };
 
     const handleRedeemOffer = () => {
-        alert("⚡ Limited Time Offer!\n\nDouble points on all waste pickups!\n\nValid for next 3 days only.\n\nSchedule a pickup now to earn double points!");
+        alert("⚡ Limited Time Offer!\n\nDouble points on all waste pickups!\n\nValid for next 3 days only.");
     };
 
     const handleDonateBooks = () => {
-        alert("📚 Donate Books/Waste\n\nEarn +50 points!\n\nTake your old books and waste to our collection center.");
+        alert("📚 Donate Books/Waste\n\nEarn +50 points!");
     };
 
     const handleParticipateCleanup = () => {
-        alert("🏖️ Participate in Cleanup\n\nEarn +100 points!\n\nJoin our weekend cleanup drives!");
+        alert("🏖️ Participate in Cleanup\n\nEarn +100 points!");
     };
 
     const handlePlantTree = () => {
-        alert("🌳 Plant a Tree\n\nEarn +75 points!\n\nJoin our tree plantation drive!");
+        alert("🌳 Plant a Tree\n\nEarn +75 points!");
     };
 
     const handleReferFriend = () => {
         const referralLink = `https://harithamission-frontend.onrender.com/register?ref=${user?.username || 'friend'}`;
         navigator.clipboard.writeText(referralLink);
-        alert("👥 Refer a Friend\n\nEarn +200 points!\n\nReferral link copied to clipboard!");
+        alert("👥 Refer a Friend\n\nEarn +200 points!\n\nReferral link copied!");
     };
 
     const handleCompleteMission = () => {
-        alert("🎯 Complete a Mission\n\nEarn +150 points!\n\nGo to Missions page!");
+        alert("🎯 Complete a Mission\n\nEarn +150 points!");
     };
 
     const getFilteredRewards = () => {
@@ -191,9 +229,7 @@ const Rewards = () => {
             <div className="card border-0 rounded-4 mb-5 overflow-hidden shadow-lg" 
                  style={{ background: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #4CAF50 100%)' }}>
                 <div className="card-body p-5 text-white text-center">
-                    <div className="mb-3">
-                        <span className="display-1">🏆</span>
-                    </div>
+                    <div className="mb-3"><span className="display-1">🏆</span></div>
                     <h2 className="fw-bold mb-2">Your Eco Points Balance</h2>
                     <div className="display-1 fw-bold my-3">{displayPoints}</div>
                     <p className="lead mb-0">🌟 Keep up the great work! You're making a difference.</p>
@@ -232,8 +268,6 @@ const Rewards = () => {
                         <div className="alert alert-info">
                             <h4>🎁 No Rewards Available Yet</h4>
                             <p>Check back soon for exciting eco-friendly rewards!</p>
-                            <hr />
-                            <small>Admin: Add rewards in the panel at /admin/</small>
                         </div>
                     </div>
                 ) : (
@@ -292,9 +326,6 @@ const Rewards = () => {
                                 <span>🎯 Complete a Mission</span>
                                 <span className="badge bg-success">+150</span>
                             </button>
-                        </div>
-                        <div className="card-footer bg-white border-0 pb-4 px-4">
-                            <div className="alert alert-info mb-0 rounded-3"><strong>💡 Pro Tip:</strong> Refer friends to earn 200 points each!</div>
                         </div>
                     </div>
                 </div>
@@ -359,5 +390,3 @@ const Rewards = () => {
 };
 
 export default Rewards;
-
-
