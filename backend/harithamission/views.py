@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.contrib.auth.models import User
 from django.db.models import Sum
+from rest_framework import generics, viewsets, serializers, status  
 from .models import Mission, Volunteer, WastePickup, ContactMessage, Reward, RewardRedemption
 from .serializers import (
     MissionSerializer, VolunteerSerializer, WastePickupSerializer,
@@ -173,13 +174,32 @@ class WastePickupViewSet(viewsets.ModelViewSet):
         pickup.save()
         volunteer.total_points += points
         volunteer.save()
-
 # ========== CONTACT MESSAGE VIEWS ==========
 
 class ContactMessageViewSet(viewsets.ModelViewSet):
     queryset = ContactMessage.objects.all()
     serializer_class = ContactMessageSerializer
     permission_classes = [AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        """Create contact message with logging"""
+        print("=" * 50)
+        print("📧 Contact Message Received:")
+        print(f"Name: {request.data.get('name')}")
+        print(f"Email: {request.data.get('email')}")
+        print(f"Subject: {request.data.get('subject')}")
+        print(f"Message: {request.data.get('message')}")
+        print("=" * 50)
+        
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            self.perform_create(serializer)
+            print("✅ Message saved to database!")
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            print("❌ Validation errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
 # ========== REWARD VIEWS ==========
 

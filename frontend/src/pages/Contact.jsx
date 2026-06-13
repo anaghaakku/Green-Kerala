@@ -27,17 +27,26 @@ const Contact = () => {
         setLoading(true);
         setStatus('');
 
+        // Validation
         if (!formData.name || !formData.email || !formData.message) {
             setStatus('error');
             setLoading(false);
+            alert('Please fill all required fields');
             return;
         }
 
         try {
             // Step 1: Save to Django Backend (for admin panel)
             console.log('Saving to backend...');
+            console.log('Data being sent:', {
+                name: formData.name,
+                email: formData.email,
+                subject: formData.subject || 'No Subject',
+                message: formData.message
+            });
+
             const backendResponse = await axios.post(
-                'https://green-kerala-api.onrender.com/api/contact/', 
+                'https://green-kerala-api.onrender.com/api/contact/',
                 {
                     name: formData.name,
                     email: formData.email,
@@ -46,55 +55,63 @@ const Contact = () => {
                 },
                 {
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     }
                 }
             );
-            
-            console.log('Backend response:', backendResponse.data);
-            
-            if (backendResponse.status === 200 || backendResponse.status === 201) {
-                console.log('✅ Message saved to database');
-            }
 
-            // Step 2: Send email via EmailJS
-            console.log('Sending email...');
-            const templateParams = {
-                to_email: 'anaghaakku834@gmail.com',
-                from_name: formData.name,
-                from_email: formData.email,
-                subject: formData.subject || 'New Contact Message',
-                message: formData.message,
-                reply_to: formData.email
-            };
-            
-            const emailResponse = await emailjs.send(
-                EMAILJS_SERVICE_ID, 
-                EMAILJS_TEMPLATE_ID, 
-                templateParams, 
-                EMAILJS_PUBLIC_KEY
-            );
-            
-            console.log('Email response:', emailResponse);
-            
-            if (emailResponse.status === 200) {
+            console.log('Backend response:', backendResponse.data);
+
+            if (backendResponse.status === 200 || backendResponse.status === 201) {
+                console.log('✅ Message saved to database!');
+                
+                // Step 2: Send email via EmailJS
+                try {
+                    const templateParams = {
+                        to_email: 'anaghaakku834@gmail.com',
+                        from_name: formData.name,
+                        from_email: formData.email,
+                        subject: formData.subject || 'New Contact Message',
+                        message: formData.message,
+                        reply_to: formData.email
+                    };
+                    
+                    await emailjs.send(
+                        EMAILJS_SERVICE_ID, 
+                        EMAILJS_TEMPLATE_ID, 
+                        templateParams, 
+                        EMAILJS_PUBLIC_KEY
+                    );
+                    console.log('✅ Email sent successfully!');
+                } catch (emailError) {
+                    console.error('Email error:', emailError);
+                    // Don't fail the whole process if email fails
+                }
+                
                 setStatus('success');
                 setFormData({ name: '', email: '', subject: '', message: '' });
                 setTimeout(() => setStatus(''), 5000);
             } else {
-                throw new Error('Email send failed');
+                throw new Error('Backend save failed');
             }
             
         } catch (error) {
             console.error('Error details:', error);
             console.error('Error response:', error.response?.data);
             
-            if (error.response?.status === 401) {
+            if (error.response?.status === 400) {
                 setStatus('error');
-            } else if (error.response?.status === 400) {
+                alert('Validation error: ' + JSON.stringify(error.response.data));
+            } else if (error.response?.status === 403) {
                 setStatus('error');
+                alert('Permission denied');
+            } else if (error.response?.status === 500) {
+                setStatus('error');
+                alert('Server error. Please try again later.');
             } else {
                 setStatus('error');
+                alert('Network error. Please check your connection.');
             }
         } finally {
             setLoading(false);
@@ -112,11 +129,6 @@ const Contact = () => {
         setSubscribeStatus('loading');
 
         try {
-            // Save subscription to backend
-            await axios.post('https://green-kerala-api.onrender.com/api/subscribe/', {
-                email: subscribeEmail
-            });
-
             const templateParams = {
                 to_email: subscribeEmail,
                 from_name: 'HarithaMission',
