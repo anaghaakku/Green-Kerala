@@ -10,13 +10,16 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff']
 
+        
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     confirm_password = serializers.CharField(write_only=True, min_length=6)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    city = serializers.CharField(required=False, allow_blank=True)
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'confirm_password']
+        fields = ['username', 'email', 'password', 'confirm_password', 'phone', 'city']
     
     def validate(self, data):
         if data['password'] != data['confirm_password']:
@@ -31,13 +34,35 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
     
     def create(self, validated_data):
+        phone = validated_data.pop('phone', '')
+        city = validated_data.pop('city', '')
         validated_data.pop('confirm_password')
+        
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password']
         )
-        Volunteer.objects.get_or_create(user=user)
+        
+        # Create volunteer profile with phone and city
+        volunteer, created = Volunteer.objects.get_or_create(
+            user=user,
+            defaults={
+                'phone': phone,
+                'city': city,
+                'total_points': 0,
+                'total_hours': 0,
+                'is_active': True
+            }
+        )
+        
+        if not created and (phone or city):
+            if phone:
+                volunteer.phone = phone
+            if city:
+                volunteer.city = city
+            volunteer.save()
+        
         return user
 
 class MissionSerializer(serializers.ModelSerializer):

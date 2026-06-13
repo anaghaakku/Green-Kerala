@@ -41,11 +41,14 @@ export const AuthProvider = ({ children }) => {
             const response = await axios.post(`${API_URL}/register/`, {
                 username: userData.username,
                 email: userData.email,
+                phone: userData.phone || '',
+                city: userData.city || '',
                 password: userData.password,
                 confirm_password: userData.confirm_password
             });
             
             if (response.data) {
+                // Auto login after successful registration
                 return await login(userData.username, userData.password);
             }
             return { success: true };
@@ -57,6 +60,10 @@ export const AuthProvider = ({ children }) => {
                 errorMsg = error.response.data.email;
             } else if (error.response?.data?.password) {
                 errorMsg = error.response.data.password;
+            } else if (error.response?.data?.phone) {
+                errorMsg = error.response.data.phone;
+            } else if (error.response?.data?.city) {
+                errorMsg = error.response.data.city;
             }
             return { success: false, error: errorMsg };
         }
