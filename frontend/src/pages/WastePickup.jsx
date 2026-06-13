@@ -21,23 +21,28 @@ const WastePickup = () => {
     const [pickupHistory, setPickupHistory] = useState([]);
 
     const wastePointsMap = {
-        'plastic': 10,
-        'paper': 8,
-        'glass': 15,
-        'electronic': 25,
-        'organic': 5,
-        'metal': 20
+        'plastic': 30,
+        'paper': 25,
+        'glass': 40,
+        'metal': 50,
+        'ewaste': 60,
+        'organic': 20,
+        'mixed': 35
     };
 
-    // Valid weight choices from 1-20
-    const weightChoices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+    // CORRECT WEIGHT CHOICES - Must match backend exactly
+    const weightChoices = [
+        { value: '1-5', label: '1-5 kg (50 points)' },
+        { value: '5-10', label: '5-10 kg (100 points)' },
+        { value: '10-20', label: '10-20 kg (200 points)' },
+        { value: '20+', label: '20+ kg (350 points)' }
+    ];
     
-    // Valid time choices in 24-hour format with seconds
+    // CORRECT TIME CHOICES - Must match backend exactly
     const timeChoices = [
-        '09:00:00', '09:30:00', '10:00:00', '10:30:00', '11:00:00', '11:30:00',
-        '12:00:00', '12:30:00', '13:00:00', '13:30:00', '14:00:00', '14:30:00',
-        '15:00:00', '15:30:00', '16:00:00', '16:30:00', '17:00:00', '17:30:00',
-        '18:00:00'
+        { value: 'morning', label: '🌅 Morning (9AM - 12PM)' },
+        { value: 'afternoon', label: '☀️ Afternoon (2PM - 5PM)' },
+        { value: 'evening', label: '🌙 Evening (5PM - 7PM)' }
     ];
 
     useEffect(() => {
@@ -62,21 +67,29 @@ const WastePickup = () => {
         }
     };
 
-    const calculatePoints = (wasteType, weight) => {
-        const pointsPerKg = wastePointsMap[wasteType] || 10;
-        return Math.floor(pointsPerKg * (parseFloat(weight) || 0));
+    const calculatePoints = (wasteType, weightRange) => {
+        const pointsPerKg = wastePointsMap[wasteType] || 25;
+        // Calculate points based on weight range
+        const weightPointsMap = {
+            '1-5': 50,
+            '5-10': 100,
+            '10-20': 200,
+            '20+': 350
+        };
+        const basePoints = weightPointsMap[weightRange] || 50;
+        return pointsPerKg + basePoints;
     };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         
-        if (e.target.name === 'waste_type' || e.target.name === 'estimated_weight') {
-            const newWasteType = e.target.name === 'waste_type' ? e.target.value : formData.waste_type;
-            const newWeight = e.target.name === 'estimated_weight' ? e.target.value : formData.estimated_weight;
-            if (newWasteType && newWeight) {
-                const earnedPoints = calculatePoints(newWasteType, newWeight);
-                setMessage(`✨ You will earn ${earnedPoints} points for this pickup!`);
-            }
+        if (e.target.name === 'waste_type' && formData.estimated_weight) {
+            const earnedPoints = calculatePoints(e.target.value, formData.estimated_weight);
+            setMessage(`✨ You will earn ${earnedPoints} points for this pickup!`);
+        }
+        if (e.target.name === 'estimated_weight' && formData.waste_type) {
+            const earnedPoints = calculatePoints(formData.waste_type, e.target.value);
+            setMessage(`✨ You will earn ${earnedPoints} points for this pickup!`);
         }
     };
 
@@ -93,18 +106,16 @@ const WastePickup = () => {
                 return;
             }
 
-            // Calculate points as number
             const pointsEarned = calculatePoints(formData.waste_type, formData.estimated_weight);
             
-            // Prepare request data with correct types
             const requestData = {
                 waste_type: formData.waste_type,
-                estimated_weight: Number(formData.estimated_weight), // Convert to number
+                estimated_weight: formData.estimated_weight,  // '1-5', '5-10', etc.
                 address: formData.address,
                 city: formData.city,
                 pincode: formData.pincode,
                 preferred_date: formData.preferred_date,
-                preferred_time: formData.preferred_time || null,
+                preferred_time: formData.preferred_time,  // 'morning', 'afternoon', 'evening'
                 notes: formData.notes || '',
                 points_earned: pointsEarned,
                 status: 'pending'
@@ -150,10 +161,14 @@ const WastePickup = () => {
             } else if (error.response?.status === 400) {
                 const errorData = error.response?.data;
                 if (errorData) {
-                    const errorMessages = Object.entries(errorData)
-                        .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-                        .join('; ');
-                    setMessage(`❌ ${errorMessages}`);
+                    let errorMsg = '❌ ';
+                    if (errorData.estimated_weight) {
+                        errorMsg += `Weight: ${errorData.estimated_weight.join(', ')}. `;
+                    }
+                    if (errorData.preferred_time) {
+                        errorMsg += `Time: ${errorData.preferred_time.join(', ')}. `;
+                    }
+                    setMessage(errorMsg || '❌ Invalid data');
                 } else {
                     setMessage('❌ Invalid data. Please check your form.');
                 }
@@ -164,6 +179,8 @@ const WastePickup = () => {
             setLoading(false);
         }
     };
+
+    const today = new Date().toISOString().split('T')[0];
 
     return (
         <div className="container py-5">
@@ -191,7 +208,7 @@ const WastePickup = () => {
                     <div className="card border-0 shadow-lg rounded-4">
                         <div className="card-header bg-white border-0 pt-4">
                             <h2 className="fw-bold text-center">🗑️ Schedule Waste Pickup</h2>
-                            <p className="text-center text-muted">Earn points for every kg you recycle!</p>
+                            <p className="text-center text-muted">Earn points for every pickup!</p>
                         </div>
                         <div className="card-body p-4">
                             {message && (
@@ -203,16 +220,22 @@ const WastePickup = () => {
                             <div className="table-responsive mb-4">
                                 <table className="table table-sm table-bordered">
                                     <thead className="table-success">
-                                        <tr><th>Waste Type</th><th>Points per KG</th></tr>
+                                        <tr><th>Waste Type</th><th>Base Points</th></tr>
                                     </thead>
                                     <tbody>
-                                        <tr><td>♻️ Plastic</td><td>10 points/kg</td></tr>
-                                        <tr><td>📄 Paper</td><td>8 points/kg</td></tr>
-                                        <tr><td>🥃 Glass</td><td>15 points/kg</td></tr>
-                                        <tr><td>💻 Electronic</td><td>25 points/kg</td></tr>
-                                        <tr><td>🌿 Organic</td><td>5 points/kg</td></tr>
-                                        <tr><td>🔩 Metal</td><td>20 points/kg</td></tr>
+                                        <tr><td>♻️ Plastic</td><td>30 points</td></tr>
+                                        <tr><td>📄 Paper</td><td>25 points</td></tr>
+                                        <tr><td>🥃 Glass</td><td>40 points</td></tr>
+                                        <tr><td>🔩 Metal</td><td>50 points</td></tr>
+                                        <tr><td>💻 E-Waste</td><td>60 points</td></tr>
+                                        <tr><td>🌿 Organic</td><td>20 points</td></tr>
+                                        <tr><td>📦 Mixed</td><td>35 points</td></tr>
                                     </tbody>
+                                    <tfoot>
+                                        <tr className="table-info">
+                                            <td colSpan="2"><small>+ Extra points based on weight range</small></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
 
@@ -222,20 +245,21 @@ const WastePickup = () => {
                                         <label className="form-label fw-bold">Waste Type *</label>
                                         <select name="waste_type" className="form-select" value={formData.waste_type} onChange={handleChange} required>
                                             <option value="">Select waste type</option>
-                                            <option value="plastic">♻️ Plastic</option>
-                                            <option value="paper">📄 Paper</option>
-                                            <option value="glass">🥃 Glass</option>
-                                            <option value="electronic">💻 Electronic</option>
-                                            <option value="organic">🌿 Organic</option>
-                                            <option value="metal">🔩 Metal</option>
+                                            <option value="plastic">♻️ Plastic Waste</option>
+                                            <option value="paper">📄 Paper & Cardboard</option>
+                                            <option value="glass">🥃 Glass Bottles</option>
+                                            <option value="metal">🔩 Metal Scrap</option>
+                                            <option value="ewaste">💻 E-Waste</option>
+                                            <option value="organic">🌿 Organic Waste</option>
+                                            <option value="mixed">📦 Mixed Recyclables</option>
                                         </select>
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-bold">Estimated Weight (kg) *</label>
+                                        <label className="form-label fw-bold">Estimated Weight *</label>
                                         <select name="estimated_weight" className="form-select" value={formData.estimated_weight} onChange={handleChange} required>
-                                            <option value="">Select weight</option>
+                                            <option value="">Select weight range</option>
                                             {weightChoices.map(weight => (
-                                                <option key={weight} value={weight}>{weight} kg</option>
+                                                <option key={weight.value} value={weight.value}>{weight.label}</option>
                                             ))}
                                         </select>
                                     </div>
@@ -260,19 +284,16 @@ const WastePickup = () => {
                                 <div className="row">
                                     <div className="col-md-6 mb-3">
                                         <label className="form-label fw-bold">Preferred Date *</label>
-                                        <input type="date" name="preferred_date" className="form-control" value={formData.preferred_date} onChange={handleChange} required />
+                                        <input type="date" name="preferred_date" className="form-control" min={today} value={formData.preferred_date} onChange={handleChange} required />
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-bold">Preferred Time</label>
-                                        <select name="preferred_time" className="form-select" value={formData.preferred_time} onChange={handleChange}>
-                                            <option value="">Select time (optional)</option>
+                                        <label className="form-label fw-bold">Preferred Time *</label>
+                                        <select name="preferred_time" className="form-select" value={formData.preferred_time} onChange={handleChange} required>
+                                            <option value="">Select time slot</option>
                                             {timeChoices.map(time => (
-                                                <option key={time} value={time}>
-                                                    {time.substring(0, 5)} {/* Display HH:MM only */}
-                                                </option>
+                                                <option key={time.value} value={time.value}>{time.label}</option>
                                             ))}
                                         </select>
-                                        <small className="text-muted">Available slots: 9:00 AM - 6:00 PM (30 min intervals)</small>
                                     </div>
                                 </div>
 
@@ -308,13 +329,13 @@ const WastePickup = () => {
                                 pickupHistory.map((pickup, index) => (
                                     <div key={index} className="border-bottom mb-3 pb-3">
                                         <div className="d-flex justify-content-between">
-                                            <strong>{pickup.waste_type} - {pickup.estimated_weight}kg</strong>
-                                            <span className="text-success fw-bold">+{pickup.points_earned || calculatePoints(pickup.waste_type, pickup.estimated_weight)} pts</span>
+                                            <strong>{pickup.waste_type} - {pickup.estimated_weight}</strong>
+                                            <span className="text-success fw-bold">+{pickup.points_earned} pts</span>
                                         </div>
-                                        <small className="text-muted">{new Date(pickup.preferred_date).toLocaleDateString()}</small>
+                                        <small className="text-muted">{new Date(pickup.preferred_date).toLocaleDateString()} - {pickup.preferred_time}</small>
                                         <div>
-                                            <span className={`badge ${pickup.status === 'completed' ? 'bg-success' : pickup.status === 'pending' ? 'bg-warning' : 'bg-secondary'}`}>
-                                                {pickup.status || 'pending'}
+                                            <span className={`badge ${pickup.status === 'completed' ? 'bg-success' : pickup.status === 'confirmed' ? 'bg-info' : pickup.status === 'pending' ? 'bg-warning' : 'bg-secondary'}`}>
+                                                {pickup.status}
                                             </span>
                                         </div>
                                     </div>
