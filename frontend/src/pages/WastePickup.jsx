@@ -8,8 +8,10 @@ const WastePickup = () => {
     const { points, addPoints, refreshPoints } = usePoints();
     const [formData, setFormData] = useState({
         waste_type: '',
-        weight: '',
+        estimated_weight: '',  // Changed from 'weight'
         address: '',
+        city: '',              // NEW FIELD
+        pincode: '',           // NEW FIELD
         preferred_date: '',
         preferred_time: '',
         notes: ''
@@ -57,9 +59,9 @@ const WastePickup = () => {
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         
-        if (e.target.name === 'waste_type' || e.target.name === 'weight') {
+        if (e.target.name === 'waste_type' || e.target.name === 'estimated_weight') {
             const newWasteType = e.target.name === 'waste_type' ? e.target.value : formData.waste_type;
-            const newWeight = e.target.name === 'weight' ? e.target.value : formData.weight;
+            const newWeight = e.target.name === 'estimated_weight' ? e.target.value : formData.estimated_weight;
             if (newWasteType && newWeight) {
                 const earnedPoints = calculatePoints(newWasteType, newWeight);
                 setMessage(`✨ You will earn ${earnedPoints} points for this pickup!`);
@@ -80,14 +82,22 @@ const WastePickup = () => {
                 return;
             }
 
-            const pointsEarned = calculatePoints(formData.waste_type, formData.weight);
+            const pointsEarned = calculatePoints(formData.waste_type, formData.estimated_weight);
+            
+            // Format time properly (remove seconds if needed)
+            let formattedTime = formData.preferred_time;
+            if (formattedTime && formattedTime.length === 5) {
+                formattedTime = `${formattedTime}:00`; // Add seconds
+            }
             
             const requestData = {
                 waste_type: formData.waste_type,
-                weight: parseFloat(formData.weight),
+                estimated_weight: parseFloat(formData.estimated_weight),
                 address: formData.address,
+                city: formData.city,
+                pincode: formData.pincode,
                 preferred_date: formData.preferred_date,
-                preferred_time: formData.preferred_time || null,
+                preferred_time: formattedTime || null,
                 notes: formData.notes || '',
                 points_earned: pointsEarned,
                 status: 'pending'
@@ -112,8 +122,10 @@ const WastePickup = () => {
                 
                 setFormData({
                     waste_type: '',
-                    weight: '',
+                    estimated_weight: '',
                     address: '',
+                    city: '',
+                    pincode: '',
                     preferred_date: '',
                     preferred_time: '',
                     notes: ''
@@ -212,14 +224,25 @@ const WastePickup = () => {
                                         </select>
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-bold">Weight (kg) *</label>
-                                        <input type="number" name="weight" className="form-control" placeholder="Enter weight in kg" step="0.1" value={formData.weight} onChange={handleChange} required />
+                                        <label className="form-label fw-bold">Estimated Weight (kg) *</label>
+                                        <input type="number" name="estimated_weight" className="form-control" placeholder="Enter weight in kg" step="0.1" value={formData.estimated_weight} onChange={handleChange} required />
                                     </div>
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label fw-bold">Pickup Address *</label>
-                                    <textarea name="address" className="form-control" rows="2" placeholder="Enter your full address" value={formData.address} onChange={handleChange} required></textarea>
+                                    <label className="form-label fw-bold">Address *</label>
+                                    <textarea name="address" className="form-control" rows="2" placeholder="Enter street address" value={formData.address} onChange={handleChange} required></textarea>
+                                </div>
+
+                                <div className="row">
+                                    <div className="col-md-6 mb-3">
+                                        <label className="form-label fw-bold">City *</label>
+                                        <input type="text" name="city" className="form-control" placeholder="Enter city" value={formData.city} onChange={handleChange} required />
+                                    </div>
+                                    <div className="col-md-6 mb-3">
+                                        <label className="form-label fw-bold">Pincode *</label>
+                                        <input type="text" name="pincode" className="form-control" placeholder="Enter pincode" value={formData.pincode} onChange={handleChange} required />
+                                    </div>
                                 </div>
 
                                 <div className="row">
@@ -230,6 +253,7 @@ const WastePickup = () => {
                                     <div className="col-md-6 mb-3">
                                         <label className="form-label fw-bold">Preferred Time</label>
                                         <input type="time" name="preferred_time" className="form-control" value={formData.preferred_time} onChange={handleChange} />
+                                        <small className="text-muted">Format: HH:MM (e.g., 14:30)</small>
                                     </div>
                                 </div>
 
@@ -265,8 +289,8 @@ const WastePickup = () => {
                                 pickupHistory.map((pickup, index) => (
                                     <div key={index} className="border-bottom mb-3 pb-3">
                                         <div className="d-flex justify-content-between">
-                                            <strong>{pickup.waste_type} - {pickup.weight}kg</strong>
-                                            <span className="text-success fw-bold">+{pickup.points_earned || calculatePoints(pickup.waste_type, pickup.weight)} pts</span>
+                                            <strong>{pickup.waste_type} - {pickup.estimated_weight}kg</strong>
+                                            <span className="text-success fw-bold">+{pickup.points_earned || calculatePoints(pickup.waste_type, pickup.estimated_weight)} pts</span>
                                         </div>
                                         <small className="text-muted">{new Date(pickup.preferred_date).toLocaleDateString()}</small>
                                         <div>
