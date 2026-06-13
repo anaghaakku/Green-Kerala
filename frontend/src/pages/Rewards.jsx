@@ -138,7 +138,12 @@ const Rewards = () => {
         }
     };
 
+    // FIXED: Corrected redemption endpoint
     const handleRedeem = async (reward) => {
+        console.log('Redeeming reward:', reward);
+        console.log('User points:', userPoints);
+        console.log('Points required:', reward.points_required);
+        
         if (userPoints >= reward.points_required) {
             try {
                 const token = localStorage.getItem('access_token');
@@ -148,17 +153,36 @@ const Rewards = () => {
                     return;
                 }
                 
-                await axios.post('https://green-kerala-api.onrender.com/api/reward-redemptions/', 
-                    { reward: reward.id, points_spent: reward.points_required },
-                    { headers: { Authorization: `Bearer ${token}` } }
+                // CORRECTED ENDPOINT - using 'redemptions' not 'reward-redemptions'
+                const response = await axios.post(
+                    'https://green-kerala-api.onrender.com/api/redemptions/', 
+                    { reward: reward.id },
+                    { 
+                        headers: { 
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        } 
+                    }
                 );
+                
+                console.log('Redemption response:', response.data);
                 
                 setRedeemedMessage(`🎉 Success! You redeemed: ${reward.name}!`);
                 setUserPoints(userPoints - reward.points_required);
-                fetchRewards();
+                fetchRewards(); // Refresh to update stock
             } catch (error) {
                 console.error('Redemption error:', error);
-                setRedeemedMessage(`❌ Failed to redeem. ${error.response?.data?.detail || 'Try again'}`);
+                console.error('Error response:', error.response?.data);
+                
+                if (error.response?.status === 404) {
+                    setRedeemedMessage(`❌ API endpoint not found. Please contact support.`);
+                } else if (error.response?.status === 401) {
+                    setRedeemedMessage(`❌ Please login again to redeem rewards.`);
+                } else if (error.response?.status === 400) {
+                    setRedeemedMessage(`❌ ${error.response?.data?.detail || 'Invalid request'}`);
+                } else {
+                    setRedeemedMessage(`❌ Failed to redeem. ${error.response?.data?.detail || 'Try again'}`);
+                }
             }
             setTimeout(() => setRedeemedMessage(''), 4000);
         } else {
@@ -168,7 +192,7 @@ const Rewards = () => {
     };
 
     const handleViewChallenge = () => {
-        alert("🎯 Weekly Challenge: Collect 10kg waste this week!\n\nCurrent progress: 4kg/10kg\n\nComplete the challenge to earn 100 bonus points!");
+        alert("🎯 Weekly Challenge: Collect 10kg waste this week!\n\nComplete the challenge to earn 100 bonus points!");
     };
 
     const handleRedeemOffer = () => {
