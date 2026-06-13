@@ -1,5 +1,12 @@
 from rest_framework import generics, viewsets,serializers
 from rest_framework.response import Response
+from rest_framework import viewsets, status
+from .models import Reward, RewardRedemption, Volunteer
+from .serializers import RewardRedemptionSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from .models import Reward, RewardRedemption, Volunteer
+from .serializers import RewardRedemptionSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.contrib.auth.models import User
@@ -209,7 +216,6 @@ class RewardViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
 
 # ========== REWARD REDEMPTION VIEWS ==========
-
 class RewardRedemptionViewSet(viewsets.ModelViewSet):
     queryset = RewardRedemption.objects.all()
     serializer_class = RewardRedemptionSerializer
@@ -220,17 +226,57 @@ class RewardRedemptionViewSet(viewsets.ModelViewSet):
             return RewardRedemption.objects.all()
         return RewardRedemption.objects.filter(volunteer__user=self.request.user)
     
-    def perform_create(self, serializer):
-        volunteer, _ = Volunteer.objects.get_or_create(user=self.request.user)
-        reward = serializer.validated_data['reward']
+    def create(self, request, *args, **kwargs):
+        # Get reward ID
+        reward_id = request.data.get('reward') or request.data.get('reward_id')
         
+        if not reward_id:
+            return Response(
+                {"error": "reward id is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            reward = Reward.objects.get(id=reward_id)
+        except Reward.DoesNotExist:
+            return Response(
+                {"error": "Reward not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        volunteer, _ = Volunteer.objects.get_or_create(user=request.user)
+        
+        # Check points and stock
         if volunteer.total_points < reward.points_required:
-            raise serializers.ValidationError("Insufficient points")
+            return Response(
+                {"error": f"Insufficient points. Need {reward.points_required}, you have {volunteer.total_points}"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         if reward.stock <= 0:
-            raise serializers.ValidationError("Reward out of stock")
+            return Response(
+                {"error": "Reward out of stock"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
+        # Create redemption
+        redemption = RewardRedemption.objects.create(
+            volunteer=volunteer,
+            reward=reward,
+            points_spent=reward.points_required,
+            status='completed'
+        )
+        
+        # Update points and stock
         volunteer.total_points -= reward.points_required
         volunteer.save()
         reward.stock -= 1
         reward.save()
-        serializer.save(volunteer=volunteer, points_spent=reward.points_required)
+        
+        # Return custom response
+        return Response({
+            'id': redemption.id,
+            'points_spent': redemption.points_spent,
+            'redeemed_date': redemption.redeemed_date,
+            'status': redemption.status,
+            'message': f'Successfully redeemed {reward.name}!'
+        }, status=status.HTTP_201_CREATED)

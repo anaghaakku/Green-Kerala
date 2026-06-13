@@ -1,4 +1,7 @@
 from rest_framework import serializers
+from rest_framework import serializers
+from .models import RewardRedemption
+
 from django.contrib.auth.models import User
 from .models import Mission, Volunteer, WastePickup, MissionRegistration, ContactMessage, Reward, RewardRedemption
 
@@ -70,17 +73,19 @@ class ContactMessageSerializer(serializers.ModelSerializer):
         model = ContactMessage
         fields = ['id', 'name', 'email', 'subject', 'message', 'created_at', 'is_read']
         read_only_fields = ['id', 'created_at', 'is_read']
-
 class RewardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reward
         fields = '__all__'
 
 class RewardRedemptionSerializer(serializers.ModelSerializer):
-    reward_name = serializers.CharField(source='reward.name', read_only=True)
-    volunteer_name = serializers.CharField(source='volunteer.user.username', read_only=True)
-    
     class Meta:
         model = RewardRedemption
-        fields = '__all__'
-        read_only_fields = ['points_spent', 'redeemed_date']
+        fields = ['id', 'points_spent', 'redeemed_date', 'status']
+        read_only_fields = ['volunteer', 'points_spent', 'redeemed_date']  
+    
+    def validate_reward(self, value):
+        """Validate reward stock"""
+        if value.stock <= 0:
+            raise serializers.ValidationError("This reward is out of stock")
+        return value
