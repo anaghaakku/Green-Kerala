@@ -32,16 +32,17 @@ const WastePickup = () => {
         refreshPoints();
     }, []);
 
-    // FIXED: Corrected endpoint from 'waste-pickups' to 'pickups'
     const fetchPickupHistory = async () => {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) return;
 
             const response = await axios.get('https://green-kerala-api.onrender.com/api/pickups/', {
-                headers: { Authorization: `Bearer ${token}` }
+                headers: { 
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
             });
-            // Handle paginated response
             setPickupHistory(response.data.results || response.data);
         } catch (error) {
             console.error('Error fetching history:', error);
@@ -66,7 +67,6 @@ const WastePickup = () => {
         }
     };
 
-    // FIXED: Corrected endpoint from 'waste-pickups' to 'pickups'
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -82,22 +82,33 @@ const WastePickup = () => {
 
             const pointsEarned = calculatePoints(formData.waste_type, formData.weight);
             
+            const requestData = {
+                waste_type: formData.waste_type,
+                weight: parseFloat(formData.weight),
+                address: formData.address,
+                preferred_date: formData.preferred_date,
+                preferred_time: formData.preferred_time || null,
+                notes: formData.notes || '',
+                points_earned: pointsEarned,
+                status: 'pending'
+            };
+            
+            console.log('Sending pickup request:', requestData);
+            
             const response = await axios.post(
                 'https://green-kerala-api.onrender.com/api/pickups/',
-                {
-                    ...formData,
-                    weight: parseFloat(formData.weight),
-                    points_earned: pointsEarned,
-                    status: 'pending'
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
+                requestData,
+                { 
+                    headers: { 
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    } 
+                }
             );
 
             if (response.status === 200 || response.status === 201) {
-                // Add points using PointsContext
                 addPoints(pointsEarned);
-                
-                setMessage(`✅ Pickup scheduled successfully! You earned ${pointsEarned} points! Total points: ${points + pointsEarned}`);
+                setMessage(`✅ Pickup scheduled successfully! You earned ${pointsEarned} points!`);
                 
                 setFormData({
                     waste_type: '',
@@ -113,10 +124,20 @@ const WastePickup = () => {
             }
         } catch (error) {
             console.error('Error scheduling pickup:', error);
+            console.error('Error response:', error.response?.data);
+            
             if (error.response?.status === 401) {
                 setMessage('❌ Session expired. Please login again.');
             } else if (error.response?.status === 400) {
-                setMessage('❌ Invalid data. Please check your form.');
+                const errorData = error.response?.data;
+                if (errorData) {
+                    const errorMessages = Object.entries(errorData)
+                        .map(([key, value]) => `${key}: ${value}`)
+                        .join(', ');
+                    setMessage(`❌ ${errorMessages}`);
+                } else {
+                    setMessage('❌ Invalid data. Please check your form.');
+                }
             } else {
                 setMessage('❌ Failed to schedule pickup. Please try again.');
             }
@@ -127,7 +148,6 @@ const WastePickup = () => {
 
     return (
         <div className="container py-5">
-            {/* Points Display Card */}
             <div className="card border-0 rounded-4 mb-4 shadow-lg" style={{ background: 'linear-gradient(135deg, #1B5E20, #4CAF50)' }}>
                 <div className="card-body p-4 text-white">
                     <div className="row align-items-center">
@@ -148,7 +168,6 @@ const WastePickup = () => {
             </div>
 
             <div className="row">
-                {/* Pickup Form */}
                 <div className="col-lg-7">
                     <div className="card border-0 shadow-lg rounded-4">
                         <div className="card-header bg-white border-0 pt-4">
@@ -162,14 +181,10 @@ const WastePickup = () => {
                                 </div>
                             )}
 
-                            {/* Points Info Table */}
                             <div className="table-responsive mb-4">
                                 <table className="table table-sm table-bordered">
                                     <thead className="table-success">
-                                        <tr>
-                                            <th>Waste Type</th>
-                                            <th>Points per KG</th>
-                                        </tr>
+                                        <tr><th>Waste Type</th><th>Points per KG</th></tr>
                                     </thead>
                                     <tbody>
                                         <tr><td>♻️ Plastic</td><td>10 points/kg</td></tr>
@@ -235,7 +250,6 @@ const WastePickup = () => {
                     </div>
                 </div>
 
-                {/* Pickup History */}
                 <div className="col-lg-5">
                     <div className="card border-0 shadow-lg rounded-4">
                         <div className="card-header bg-white border-0 pt-4">
@@ -263,11 +277,6 @@ const WastePickup = () => {
                                     </div>
                                 ))
                             )}
-                        </div>
-                        <div className="card-footer bg-white border-0 pb-4">
-                            <div className="alert alert-success mb-0">
-                                <strong>💡 Eco Tip:</strong> Segregate your waste properly to earn maximum points!
-                            </div>
                         </div>
                     </div>
                 </div>
