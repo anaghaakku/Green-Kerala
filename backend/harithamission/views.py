@@ -1,8 +1,8 @@
 from rest_framework import generics, viewsets,serializers
 from rest_framework.response import Response
 from rest_framework import viewsets, status
-from .models import Reward, RewardRedemption, Volunteer
-from .serializers import RewardRedemptionSerializer
+from .models import Reward, RewardRedemption, Volunteer,MissionRegistration
+from .serializers import RewardRedemptionSerializer,MissionRegistrationSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .models import Reward, RewardRedemption, Volunteer
@@ -280,3 +280,17 @@ class RewardRedemptionViewSet(viewsets.ModelViewSet):
             'status': redemption.status,
             'message': f'Successfully redeemed {reward.name}!'
         }, status=status.HTTP_201_CREATED)
+    
+class MissionRegistrationViewSet(viewsets.ModelViewSet):
+    queryset = MissionRegistration.objects.all()
+    serializer_class = MissionRegistrationSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return MissionRegistration.objects.all()
+        return MissionRegistration.objects.filter(volunteer__user=self.request.user)
+    
+    def perform_create(self, serializer):
+        volunteer, _ = Volunteer.objects.get_or_create(user=self.request.user)
+        serializer.save(volunteer=volunteer)

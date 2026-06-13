@@ -10,7 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'is_staff']
 
-        
+
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=6)
     confirm_password = serializers.CharField(write_only=True, min_length=6)
@@ -84,7 +84,7 @@ class WastePickupSerializer(serializers.ModelSerializer):
         model = WastePickup
         fields = '__all__'
         read_only_fields = ['volunteer', 'points_earned', 'created_at']
-
+        
 class MissionRegistrationSerializer(serializers.ModelSerializer):
     volunteer_name = serializers.CharField(source='volunteer.user.username', read_only=True)
     mission_title = serializers.CharField(source='mission.title', read_only=True)
@@ -92,6 +92,7 @@ class MissionRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = MissionRegistration
         fields = '__all__'
+        read_only_fields = ['volunteer', 'registered_date']
 
 class ContactMessageSerializer(serializers.ModelSerializer):
     class Meta:

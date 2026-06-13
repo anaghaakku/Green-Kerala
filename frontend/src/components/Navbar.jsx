@@ -33,7 +33,7 @@ const Navbar = () => {
                                 <li className="nav-item"><Link className="nav-link" to="/rewards" onClick={() => setIsOpen(false)}>🎁 Rewards</Link></li>
                                 <li className="nav-item"><Link className="nav-link" to="/compost-guide" onClick={() => setIsOpen(false)}>🌱 Compost Guide</Link></li>
                                 <li className="nav-item"><Link className="nav-link" to="/about" onClick={() => setIsOpen(false)}>About</Link></li>
-                       
+                                <Link className="nav-link" to="/missions">🎯 Missions</Link>
                                 <li className="nav-item"><Link className="nav-link" to="/contact" onClick={() => setIsOpen(false)}>Contact</Link></li>
                                 <li className="nav-item"><Link className="nav-link" to="/dashboard" onClick={() => setIsOpen(false)}>📊 Dashboard</Link></li>
                                 <li className="nav-item"><span className="nav-link text-success">👤 {user.username}</span></li>

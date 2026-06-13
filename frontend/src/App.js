@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import About from './pages/About';
+import Missions from './pages/Missions';
 import Contact from './pages/Contact';
 import WastePickup from './pages/WastePickup';
 import Rewards from './pages/Rewards';
@@ -28,6 +29,7 @@ function App() {
                                 <Route path="/login" element={<Login />} />
                                 <Route path="/register" element={<Register />} />
                                 <Route path="/staff-login" element={<StaffLogin />} />
+                                <Route path="/missions" element={<ProtectedRoute><Missions /></ProtectedRoute>} />
                                 <Route path="/staff-dashboard" element={<StaffDashboard />} />
                                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                                 <Route path="/about" element={<ProtectedRoute><About /></ProtectedRoute>} />

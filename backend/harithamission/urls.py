@@ -9,6 +9,8 @@ router.register('pickups', views.WastePickupViewSet)
 router.register('contact', views.ContactMessageViewSet)
 router.register('rewards', views.RewardViewSet)
 router.register('redemptions', views.RewardRedemptionViewSet)
+router.register('mission-registrations', views.MissionRegistrationViewSet)  
+
 
 urlpatterns = [
     path('', include(router.urls)),
