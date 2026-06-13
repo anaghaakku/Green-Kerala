@@ -1,15 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { usePoints } from '../context/PointsContext';
 
 const Rewards = () => {
     const { user } = useAuth();
+    const { points, deductPoints, refreshPoints } = usePoints();
     const [rewards, setRewards] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [userPoints, setUserPoints] = useState(0);
     const [redeemedMessage, setRedeemedMessage] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [pointsLoading, setPointsLoading] = useState(true);
 
     // Updated icon function with proper mapping
     const getIconForCategory = (category, name) => {
@@ -105,46 +105,23 @@ const Rewards = () => {
     // Auto-refresh every 10 seconds
     useEffect(() => {
         fetchRewards();
-        fetchUserPoints();
+        refreshPoints(); // Refresh points from context
         
         const interval = setInterval(() => {
             fetchRewards();
+            refreshPoints();
         }, 10000);
         
         return () => clearInterval(interval);
-    }, [fetchRewards]);
+    }, [fetchRewards, refreshPoints]);
 
-    const fetchUserPoints = async () => {
-        setPointsLoading(true);
-        try {
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                setUserPoints(0);
-                setPointsLoading(false);
-                return;
-            }
-            
-            const response = await axios.get('https://green-kerala-api.onrender.com/api/volunteer-profile/', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            const points = response.data.total_points || response.data.points || 0;
-            setUserPoints(points);
-        } catch (error) {
-            console.error('Error fetching points:', error);
-            setUserPoints(0);
-        } finally {
-            setPointsLoading(false);
-        }
-    };
-
-    // FIXED: Corrected redemption endpoint
+    // FIXED: Redemption with PointsContext
     const handleRedeem = async (reward) => {
         console.log('Redeeming reward:', reward);
-        console.log('User points:', userPoints);
+        console.log('User points:', points);
         console.log('Points required:', reward.points_required);
         
-        if (userPoints >= reward.points_required) {
+        if (points >= reward.points_required) {
             try {
                 const token = localStorage.getItem('access_token');
                 if (!token) {
@@ -153,23 +130,50 @@ const Rewards = () => {
                     return;
                 }
                 
-                // CORRECTED ENDPOINT - using 'redemptions' not 'reward-redemptions'
-                const response = await axios.post(
-                    'https://green-kerala-api.onrender.com/api/redemptions/', 
+                // Try different request formats
+                const formatsToTry = [
                     { reward: reward.id },
-                    { 
-                        headers: { 
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        } 
+                    { reward_id: reward.id },
+                    { reward: reward.id, points_spent: reward.points_required },
+                    { id: reward.id, reward_id: reward.id }
+                ];
+                
+                let success = false;
+                let lastError = null;
+                
+                for (const data of formatsToTry) {
+                    try {
+                        console.log('Trying format:', data);
+                        const response = await axios.post(
+                            'https://green-kerala-api.onrender.com/api/redemptions/', 
+                            data,
+                            { 
+                                headers: { 
+                                    Authorization: `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                } 
+                            }
+                        );
+                        console.log('Success with format:', data, response.data);
+                        success = true;
+                        
+                        // Deduct points using PointsContext
+                        deductPoints(reward.points_required);
+                        
+                        setRedeemedMessage(`🎉 Success! You redeemed: ${reward.name}!`);
+                        fetchRewards(); // Refresh to update stock
+                        refreshPoints(); // Refresh points
+                        break;
+                    } catch (err) {
+                        lastError = err;
+                        console.log('Failed with format:', data, err.response?.data);
                     }
-                );
+                }
                 
-                console.log('Redemption response:', response.data);
+                if (!success) {
+                    throw lastError;
+                }
                 
-                setRedeemedMessage(`🎉 Success! You redeemed: ${reward.name}!`);
-                setUserPoints(userPoints - reward.points_required);
-                fetchRewards(); // Refresh to update stock
             } catch (error) {
                 console.error('Redemption error:', error);
                 console.error('Error response:', error.response?.data);
@@ -179,14 +183,15 @@ const Rewards = () => {
                 } else if (error.response?.status === 401) {
                     setRedeemedMessage(`❌ Please login again to redeem rewards.`);
                 } else if (error.response?.status === 400) {
-                    setRedeemedMessage(`❌ ${error.response?.data?.detail || 'Invalid request'}`);
+                    const errorMsg = error.response?.data?.detail || error.response?.data?.error || 'Invalid request';
+                    setRedeemedMessage(`❌ ${errorMsg}`);
                 } else {
-                    setRedeemedMessage(`❌ Failed to redeem. ${error.response?.data?.detail || 'Try again'}`);
+                    setRedeemedMessage(`❌ Failed to redeem. Please try again.`);
                 }
             }
             setTimeout(() => setRedeemedMessage(''), 4000);
         } else {
-            setRedeemedMessage(`❌ Need ${reward.points_required - userPoints} more points for ${reward.name}`);
+            setRedeemedMessage(`❌ Need ${reward.points_required - points} more points for ${reward.name}`);
             setTimeout(() => setRedeemedMessage(''), 4000);
         }
     };
@@ -239,8 +244,6 @@ const Rewards = () => {
         );
     }
 
-    const displayPoints = pointsLoading ? '...' : userPoints.toLocaleString();
-
     return (
         <div className="container py-5">
             {redeemedMessage && (
@@ -249,17 +252,17 @@ const Rewards = () => {
                 </div>
             )}
 
-            {/* Hero Banner */}
+            {/* Hero Banner with Points */}
             <div className="card border-0 rounded-4 mb-5 overflow-hidden shadow-lg" 
                  style={{ background: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #4CAF50 100%)' }}>
                 <div className="card-body p-5 text-white text-center">
                     <div className="mb-3"><span className="display-1">🏆</span></div>
                     <h2 className="fw-bold mb-2">Your Eco Points Balance</h2>
-                    <div className="display-1 fw-bold my-3">{displayPoints}</div>
+                    <div className="display-1 fw-bold my-3">{points.toLocaleString()}</div>
                     <p className="lead mb-0">🌟 Keep up the great work! You're making a difference.</p>
                     <div className="mt-4">
                         <div className="progress" style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.3)' }}>
-                            <div className="progress-bar bg-warning" style={{ width: `${Math.min((userPoints / 5000) * 100, 100)}%` }}></div>
+                            <div className="progress-bar bg-warning" style={{ width: `${Math.min((points / 5000) * 100, 100)}%` }}></div>
                         </div>
                         <small className="mt-2 d-block">Next Milestone: 5,000 points</small>
                     </div>
@@ -297,7 +300,7 @@ const Rewards = () => {
                 ) : (
                     filteredRewards.map(reward => (
                         <div key={reward.id} className="col-lg-4 col-md-6">
-                            <div className="card border-0 shadow-sm h-100 rounded-4">
+                            <div className="card border-0 shadow-sm h-100 rounded-4 hover-card">
                                 <div className="card-body p-4 text-center">
                                     <div className="mb-3"><span className="display-1">{reward.icon}</span></div>
                                     <h4 className="fw-bold mb-2">{reward.name}</h4>
@@ -308,12 +311,12 @@ const Rewards = () => {
                                     </div>
                                     {reward.is_popular && <div className="mb-2"><span className="badge bg-danger rounded-pill px-3">🔥 Popular</span></div>}
                                     <button 
-                                        className={`btn w-100 py-2 fw-bold rounded-pill ${userPoints >= reward.points_required && reward.stock > 0 ? 'btn-success' : 'btn-secondary'}`}
+                                        className={`btn w-100 py-2 fw-bold rounded-pill ${points >= reward.points_required && reward.stock > 0 ? 'btn-success' : 'btn-secondary'}`}
                                         onClick={() => handleRedeem(reward)}
-                                        disabled={userPoints < reward.points_required || reward.stock === 0}
+                                        disabled={points < reward.points_required || reward.stock === 0}
                                     >
-                                        {userPoints >= reward.points_required && reward.stock > 0 ? '🎁 Redeem Now' : 
-                                         userPoints < reward.points_required ? `Need ${reward.points_required - userPoints} more points` : 'Out of Stock'}
+                                        {points >= reward.points_required && reward.stock > 0 ? '🎁 Redeem Now' : 
+                                         points < reward.points_required ? `Need ${reward.points_required - points} more points` : 'Out of Stock'}
                                     </button>
                                 </div>
                             </div>
@@ -351,6 +354,9 @@ const Rewards = () => {
                                 <span className="badge bg-success">+150</span>
                             </button>
                         </div>
+                        <div className="card-footer bg-white border-0 pb-4 px-4">
+                            <div className="alert alert-info mb-0 rounded-3"><strong>💡 Pro Tip:</strong> Refer friends to earn 200 points each!</div>
+                        </div>
                     </div>
                 </div>
 
@@ -359,6 +365,7 @@ const Rewards = () => {
                     <div className="card border-0 shadow-sm rounded-4 h-100">
                         <div className="card-header bg-white border-0 pt-4 px-4">
                             <h3 className="fw-bold mb-0">🏆 Top Volunteers</h3>
+                            <p className="text-muted mt-2">This month's eco-champions</p>
                         </div>
                         <div className="card-body p-4">
                             <div className="d-flex justify-content-between align-items-center p-3 mb-2 rounded-3" style={{ backgroundColor: '#FFF8E1' }}>
@@ -376,8 +383,8 @@ const Rewards = () => {
                         </div>
                         <div className="card-footer bg-white border-0 pb-4 px-4">
                             <div className="d-flex justify-content-between align-items-center p-3 rounded-3" style={{ backgroundColor: '#E8F5E9' }}>
-                                <div><span className="fw-bold">Your Rank</span></div>
-                                <div><span className="fw-bold text-success">#8</span> ({userPoints.toLocaleString()} pts)</div>
+                                <div><span className="fw-bold">Your Points</span></div>
+                                <div><span className="fw-bold text-success">{points.toLocaleString()} pts</span></div>
                             </div>
                         </div>
                     </div>

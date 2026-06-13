@@ -1,315 +1,538 @@
-import { useState } from 'react';
+// import { useState, useEffect } from 'react';
+// import axios from 'axios';
+// import { useAuth } from '../context/AuthContext';
+
+// const WastePickup = () => {
+//     const { user } = useAuth();
+//     const [formData, setFormData] = useState({
+//         waste_type: '',
+//         weight: '',
+//         address: '',
+//         preferred_date: '',
+//         preferred_time: '',
+//         notes: ''
+//     });
+//     const [loading, setLoading] = useState(false);
+//     const [message, setMessage] = useState('');
+//     const [userPoints, setUserPoints] = useState(0);
+//     const [pickupHistory, setPickupHistory] = useState([]);
+
+//     // Waste type points mapping
+//     const wastePointsMap = {
+//         'plastic': 10,
+//         'paper': 8,
+//         'glass': 15,
+//         'electronic': 25,
+//         'organic': 5,
+//         'metal': 20
+//     };
+
+//     useEffect(() => {
+//         fetchUserPoints();
+//         fetchPickupHistory();
+//     }, []);
+
+//     const fetchUserPoints = async () => {
+//         try {
+//             const token = localStorage.getItem('access_token');
+//             if (!token) return;
+
+//             const response = await axios.get('https://green-kerala-api.onrender.com/api/volunteer-profile/', {
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+            
+//             const points = response.data.total_points || 0;
+//             setUserPoints(points);
+//             // Store in localStorage for persistence
+//             localStorage.setItem('user_points', points);
+//         } catch (error) {
+//             console.error('Error fetching points:', error);
+//             // Get from localStorage if API fails
+//             const savedPoints = localStorage.getItem('user_points');
+//             if (savedPoints) setUserPoints(parseInt(savedPoints));
+//         }
+//     };
+
+//     const fetchPickupHistory = async () => {
+//         try {
+//             const token = localStorage.getItem('access_token');
+//             if (!token) return;
+
+//             const response = await axios.get('https://green-kerala-api.onrender.com/api/waste-pickups/', {
+//                 headers: { Authorization: `Bearer ${token}` }
+//             });
+//             setPickupHistory(response.data);
+//         } catch (error) {
+//             console.error('Error fetching history:', error);
+//         }
+//     };
+
+//     const calculatePoints = (wasteType, weight) => {
+//         const pointsPerKg = wastePointsMap[wasteType] || 10;
+//         const calculatedPoints = pointsPerKg * parseFloat(weight || 0);
+//         return Math.floor(calculatedPoints);
+//     };
+
+//     const handleChange = (e) => {
+//         setFormData({ ...formData, [e.target.name]: e.target.value });
+        
+//         // Show points preview when waste type or weight changes
+//         if (e.target.name === 'waste_type' || e.target.name === 'weight') {
+//             const newWasteType = e.target.name === 'waste_type' ? e.target.value : formData.waste_type;
+//             const newWeight = e.target.name === 'weight' ? e.target.value : formData.weight;
+//             if (newWasteType && newWeight) {
+//                 const points = calculatePoints(newWasteType, newWeight);
+//                 setMessage(`✨ You will earn ${points} points for this pickup!`);
+//             }
+//         }
+//     };
+
+//     const handleSubmit = async (e) => {
+//         e.preventDefault();
+//         setLoading(true);
+//         setMessage('');
+
+//         try {
+//             const token = localStorage.getItem('access_token');
+//             if (!token) {
+//                 setMessage('❌ Please login to schedule a pickup');
+//                 setLoading(false);
+//                 return;
+//             }
+
+//             const pointsEarned = calculatePoints(formData.waste_type, formData.weight);
+            
+//             // Submit pickup request
+//             const response = await axios.post(
+//                 'https://green-kerala-api.onrender.com/api/waste-pickups/',
+//                 {
+//                     ...formData,
+//                     weight: parseFloat(formData.weight),
+//                     points_earned: pointsEarned,
+//                     status: 'pending'
+//                 },
+//                 { headers: { Authorization: `Bearer ${token}` } }
+//             );
+
+//             if (response.status === 200 || response.status === 201) {
+//                 // Update points locally and in storage
+//                 const newPoints = userPoints + pointsEarned;
+//                 setUserPoints(newPoints);
+//                 localStorage.setItem('user_points', newPoints);
+                
+//                 setMessage(`✅ Pickup scheduled successfully! You earned ${pointsEarned} points! Total points: ${newPoints}`);
+                
+//                 // Reset form
+//                 setFormData({
+//                     waste_type: '',
+//                     weight: '',
+//                     address: '',
+//                     preferred_date: '',
+//                     preferred_time: '',
+//                     notes: ''
+//                 });
+                
+//                 // Refresh history
+//                 fetchPickupHistory();
+//             }
+//         } catch (error) {
+//             console.error('Error scheduling pickup:', error);
+//             setMessage('❌ Failed to schedule pickup. Please try again.');
+//         } finally {
+//             setLoading(false);
+//         }
+//     };
+
+//     return (
+//         <div className="container py-5">
+//             {/* Points Display Card */}
+//             <div className="card border-0 rounded-4 mb-4 shadow-lg" style={{ background: 'linear-gradient(135deg, #1B5E20, #4CAF50)' }}>
+//                 <div className="card-body p-4 text-white">
+//                     <div className="row align-items-center">
+//                         <div className="col-8">
+//                             <h5 className="mb-1">💰 Your Balance</h5>
+//                             <h2 className="display-4 fw-bold mb-0">{userPoints.toLocaleString()}</h2>
+//                             <small>Eco Points Available</small>
+//                         </div>
+//                         <div className="col-4 text-end">
+//                             <span className="display-1">🏆</span>
+//                         </div>
+//                     </div>
+//                     <div className="progress mt-3" style={{ height: '8px', backgroundColor: 'rgba(255,255,255,0.3)' }}>
+//                         <div className="progress-bar bg-warning" style={{ width: `${Math.min((userPoints / 5000) * 100, 100)}%` }}></div>
+//                     </div>
+//                     <small>Next Milestone: 5,000 points</small>
+//                 </div>
+//             </div>
+
+//             <div className="row">
+//                 {/* Pickup Form */}
+//                 <div className="col-lg-7">
+//                     <div className="card border-0 shadow-lg rounded-4">
+//                         <div className="card-header bg-white border-0 pt-4">
+//                             <h2 className="fw-bold text-center">🗑️ Schedule Waste Pickup</h2>
+//                             <p className="text-center text-muted">Earn points for every kg you recycle!</p>
+//                         </div>
+//                         <div className="card-body p-4">
+//                             {message && (
+//                                 <div className={`alert ${message.includes('✅') ? 'alert-success' : message.includes('✨') ? 'alert-info' : 'alert-danger'} text-center`}>
+//                                     {message}
+//                                 </div>
+//                             )}
+
+//                             {/* Points Info Table */}
+//                             <div className="table-responsive mb-4">
+//                                 <table className="table table-sm table-bordered">
+//                                     <thead className="table-success">
+//                                         <tr>
+//                                             <th>Waste Type</th>
+//                                             <th>Points per KG</th>
+//                                         </tr>
+//                                     </thead>
+//                                     <tbody>
+//                                         <tr><td>♻️ Plastic</td><td>10 points/kg</td></tr>
+//                                         <tr><td>📄 Paper</td><td>8 points/kg</td></tr>
+//                                         <tr><td>🥃 Glass</td><td>15 points/kg</td></tr>
+//                                         <tr><td>💻 Electronic</td><td>25 points/kg</td></tr>
+//                                         <tr><td>🌿 Organic</td><td>5 points/kg</td></tr>
+//                                         <tr><td>🔩 Metal</td><td>20 points/kg</td></tr>
+//                                     </tbody>
+//                                 </table>
+//                             </div>
+
+//                             <form onSubmit={handleSubmit}>
+//                                 <div className="row">
+//                                     <div className="col-md-6 mb-3">
+//                                         <label className="form-label fw-bold">Waste Type *</label>
+//                                         <select name="waste_type" className="form-select" value={formData.waste_type} onChange={handleChange} required>
+//                                             <option value="">Select waste type</option>
+//                                             <option value="plastic">♻️ Plastic</option>
+//                                             <option value="paper">📄 Paper</option>
+//                                             <option value="glass">🥃 Glass</option>
+//                                             <option value="electronic">💻 Electronic</option>
+//                                             <option value="organic">🌿 Organic</option>
+//                                             <option value="metal">🔩 Metal</option>
+//                                         </select>
+//                                     </div>
+//                                     <div className="col-md-6 mb-3">
+//                                         <label className="form-label fw-bold">Weight (kg) *</label>
+//                                         <input type="number" name="weight" className="form-control" placeholder="Enter weight in kg" step="0.1" value={formData.weight} onChange={handleChange} required />
+//                                     </div>
+//                                 </div>
+
+//                                 <div className="mb-3">
+//                                     <label className="form-label fw-bold">Pickup Address *</label>
+//                                     <textarea name="address" className="form-control" rows="2" placeholder="Enter your full address" value={formData.address} onChange={handleChange} required></textarea>
+//                                 </div>
+
+//                                 <div className="row">
+//                                     <div className="col-md-6 mb-3">
+//                                         <label className="form-label fw-bold">Preferred Date *</label>
+//                                         <input type="date" name="preferred_date" className="form-control" value={formData.preferred_date} onChange={handleChange} required />
+//                                     </div>
+//                                     <div className="col-md-6 mb-3">
+//                                         <label className="form-label fw-bold">Preferred Time</label>
+//                                         <input type="time" name="preferred_time" className="form-control" value={formData.preferred_time} onChange={handleChange} />
+//                                     </div>
+//                                 </div>
+
+//                                 <div className="mb-3">
+//                                     <label className="form-label fw-bold">Additional Notes</label>
+//                                     <textarea name="notes" className="form-control" rows="2" placeholder="Any special instructions?" value={formData.notes} onChange={handleChange}></textarea>
+//                                 </div>
+
+//                                 <button type="submit" className="btn btn-success w-100 py-3 fw-bold fs-5 rounded-pill" disabled={loading}>
+//                                     {loading ? (
+//                                         <span><span className="spinner-border spinner-border-sm me-2"></span>Scheduling...</span>
+//                                     ) : (
+//                                         <span>🗑️ Schedule Pickup</span>
+//                                     )}
+//                                 </button>
+//                             </form>
+//                         </div>
+//                     </div>
+//                 </div>
+
+//                 {/* Pickup History */}
+//                 <div className="col-lg-5">
+//                     <div className="card border-0 shadow-lg rounded-4">
+//                         <div className="card-header bg-white border-0 pt-4">
+//                             <h3 className="fw-bold text-center">📋 Pickup History</h3>
+//                         </div>
+//                         <div className="card-body p-4" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+//                             {pickupHistory.length === 0 ? (
+//                                 <div className="text-center text-muted py-4">
+//                                     <span className="display-4">🗑️</span>
+//                                     <p>No pickups yet. Schedule your first pickup!</p>
+//                                 </div>
+//                             ) : (
+//                                 pickupHistory.map((pickup, index) => (
+//                                     <div key={index} className="border-bottom mb-3 pb-3">
+//                                         <div className="d-flex justify-content-between">
+//                                             <strong>{pickup.waste_type} - {pickup.weight}kg</strong>
+//                                             <span className="text-success fw-bold">+{pickup.points_earned || calculatePoints(pickup.waste_type, pickup.weight)} pts</span>
+//                                         </div>
+//                                         <small className="text-muted">{new Date(pickup.preferred_date).toLocaleDateString()}</small>
+//                                         <div><span className={`badge ${pickup.status === 'completed' ? 'bg-success' : pickup.status === 'pending' ? 'bg-warning' : 'bg-secondary'}`}>{pickup.status}</span></div>
+//                                     </div>
+//                                 ))
+//                             )}
+//                         </div>
+//                         <div className="card-footer bg-white border-0 pb-4">
+//                             <div className="alert alert-success mb-0">
+//                                 <strong>💡 Eco Tip:</strong> Segregate your waste properly to earn maximum points!
+//                             </div>
+//                         </div>
+//                     </div>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// };
+
+// export default WastePickup;
+
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import { usePoints } from '../context/PointsContext';
 
 const WastePickup = () => {
+    const { user } = useAuth();
+    const { points, addPoints, refreshPoints } = usePoints();
     const [formData, setFormData] = useState({
-        waste_type: 'plastic',
-        estimated_weight: '1-5',
+        waste_type: '',
+        weight: '',
         address: '',
-        city: '',
-        pincode: '',
         preferred_date: '',
-        preferred_time: 'morning',
+        preferred_time: '',
         notes: ''
     });
-    const [status, setStatus] = useState('');
     const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
+    const [pickupHistory, setPickupHistory] = useState([]);
+
+    const wastePointsMap = {
+        'plastic': 10,
+        'paper': 8,
+        'glass': 15,
+        'electronic': 25,
+        'organic': 5,
+        'metal': 20
+    };
+
+    useEffect(() => {
+        fetchPickupHistory();
+        refreshPoints();
+    }, []);
+
+    const fetchPickupHistory = async () => {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            const response = await axios.get('https://green-kerala-api.onrender.com/api/waste-pickups/', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setPickupHistory(response.data);
+        } catch (error) {
+            console.error('Error fetching history:', error);
+        }
+    };
+
+    const calculatePoints = (wasteType, weight) => {
+        const pointsPerKg = wastePointsMap[wasteType] || 10;
+        return Math.floor(pointsPerKg * parseFloat(weight || 0));
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+        
+        if (e.target.name === 'waste_type' || e.target.name === 'weight') {
+            const newWasteType = e.target.name === 'waste_type' ? e.target.value : formData.waste_type;
+            const newWeight = e.target.name === 'weight' ? e.target.value : formData.weight;
+            if (newWasteType && newWeight) {
+                const earnedPoints = calculatePoints(newWasteType, newWeight);
+                setMessage(`✨ You will earn ${earnedPoints} points for this pickup!`);
+            }
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setStatus('');
-
-        // Get token
-        const token = localStorage.getItem('access_token');
-        
-        if (!token) {
-            setStatus('error');
-            setLoading(false);
-            alert('Please login first');
-            return;
-        }
-
-        // Validate required fields
-        if (!formData.address || !formData.city || !formData.pincode || !formData.preferred_date) {
-            setStatus('error');
-            setLoading(false);
-            alert('Please fill all required fields');
-            return;
-        }
+        setMessage('');
 
         try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                setMessage('❌ Please login to schedule a pickup');
+                setLoading(false);
+                return;
+            }
+
+            const pointsEarned = calculatePoints(formData.waste_type, formData.weight);
+            
             const response = await axios.post(
-                'https://green-kerala-api.onrender.com/api/pickups/',
+                'https://green-kerala-api.onrender.com/api/waste-pickups/',
                 {
-                    waste_type: formData.waste_type,
-                    estimated_weight: formData.estimated_weight,
-                    address: formData.address,
-                    city: formData.city,
-                    pincode: formData.pincode,
-                    preferred_date: formData.preferred_date,
-                    preferred_time: formData.preferred_time,
-                    notes: formData.notes
+                    ...formData,
+                    weight: parseFloat(formData.weight),
+                    points_earned: pointsEarned,
+                    status: 'pending'
                 },
-                {
-                    headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
+                { headers: { Authorization: `Bearer ${token}` } }
             );
 
-            console.log('Success:', response.data);
-            setStatus('success');
-            
-            // Reset form
-            setFormData({
-                waste_type: 'plastic',
-                estimated_weight: '1-5',
-                address: '',
-                city: '',
-                pincode: '',
-                preferred_date: '',
-                preferred_time: 'morning',
-                notes: ''
-            });
-            
-            setTimeout(() => setStatus(''), 5000);
-            
+            if (response.status === 200 || response.status === 201) {
+                // Add points using PointsContext
+                addPoints(pointsEarned);
+                
+                setMessage(`✅ Pickup scheduled successfully! You earned ${pointsEarned} points! Total points: ${points + pointsEarned}`);
+                
+                setFormData({
+                    waste_type: '',
+                    weight: '',
+                    address: '',
+                    preferred_date: '',
+                    preferred_time: '',
+                    notes: ''
+                });
+                
+                fetchPickupHistory();
+            }
         } catch (error) {
-            console.error('Error:', error.response?.data);
-            setStatus('error');
-            const errorMsg = error.response?.data?.message || error.response?.data?.detail || 'Submission failed';
-            alert(errorMsg);
+            console.error('Error scheduling pickup:', error);
+            setMessage('❌ Failed to schedule pickup. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
-    const wasteTypes = [
-        { value: 'plastic', label: '🥤 Plastic Waste', points: 30 },
-        { value: 'paper', label: '📰 Paper & Cardboard', points: 25 },
-        { value: 'glass', label: '🥂 Glass Bottles', points: 40 },
-        { value: 'metal', label: '🔩 Metal Scrap', points: 50 },
-        { value: 'ewaste', label: '💻 E-Waste', points: 60 },
-        { value: 'organic', label: '🍂 Organic Waste', points: 20 },
-        { value: 'mixed', label: '📦 Mixed Recyclables', points: 35 }
-    ];
-
-    const weightOptions = [
-        { value: '1-5', label: '1-5 kg', points: 50 },
-        { value: '5-10', label: '5-10 kg', points: 100 },
-        { value: '10-20', label: '10-20 kg', points: 200 },
-        { value: '20+', label: '20+ kg', points: 350 }
-    ];
-
-    const timeOptions = [
-        { value: 'morning', label: 'Morning (9AM - 12PM)' },
-        { value: 'afternoon', label: 'Afternoon (2PM - 5PM)' },
-        { value: 'evening', label: 'Evening (5PM - 7PM)' }
-    ];
-
-    const selectedWaste = wasteTypes.find(w => w.value === formData.waste_type);
-    const selectedWeight = weightOptions.find(w => w.value === formData.estimated_weight);
-    const estimatedPoints = (selectedWaste?.points || 0) + (selectedWeight?.points || 0);
-
     return (
-        <div className="container my-5">
+        <div className="container py-5">
+            {/* Points Display Card */}
+            <div className="card border-0 rounded-4 mb-4 shadow-lg" style={{ background: 'linear-gradient(135deg, #1B5E20, #4CAF50)' }}>
+                <div className="card-body p-4 text-white">
+                    <div className="row align-items-center">
+                        <div className="col-8">
+                            <h5 className="mb-1">💰 Your Balance</h5>
+                            <h2 className="display-4 fw-bold mb-0">{points.toLocaleString()}</h2>
+                            <small>Eco Points Available</small>
+                        </div>
+                        <div className="col-4 text-end">
+                            <span className="display-1">🏆</span>
+                        </div>
+                    </div>
+                    <div className="progress mt-3" style={{ height: '8px', backgroundColor: 'rgba(255,255,255,0.3)' }}>
+                        <div className="progress-bar bg-warning" style={{ width: `${Math.min((points / 5000) * 100, 100)}%` }}></div>
+                    </div>
+                    <small>Next Milestone: 5,000 points</small>
+                </div>
+            </div>
+
             <div className="row">
-                <div className="col-lg-7 mx-auto">
-                    <h1 className="text-center mb-4 fw-bold">🗑️ Waste Collection Service</h1>
-                    <p className="text-center text-muted mb-5">
-                        Schedule a free waste collection pickup. Earn eco-points for every kg you recycle!
-                    </p>
-
-                    {/* Info Cards */}
-                    <div className="row mb-5">
-                        <div className="col-md-4 mb-3">
-                            <div className="card bg-success text-white text-center h-100">
-                                <div className="card-body">
-                                    <div className="display-4">🚛</div>
-                                    <h5>Free Pickup</h5>
-                                    <small>No charges</small>
-                                </div>
-                            </div>
+                <div className="col-lg-7">
+                    <div className="card border-0 shadow-lg rounded-4">
+                        <div className="card-header bg-white border-0 pt-4">
+                            <h2 className="fw-bold text-center">🗑️ Schedule Waste Pickup</h2>
+                            <p className="text-center text-muted">Earn points for every kg you recycle!</p>
                         </div>
-                        <div className="col-md-4 mb-3">
-                            <div className="card bg-info text-white text-center h-100">
-                                <div className="card-body">
-                                    <div className="display-4">🪙</div>
-                                    <h5>Earn Points</h5>
-                                    <small>Up to 350 points</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="col-md-4 mb-3">
-                            <div className="card bg-warning text-white text-center h-100">
-                                <div className="card-body">
-                                    <div className="display-4">♻️</div>
-                                    <h5>100% Recycling</h5>
-                                    <small>Eco-friendly</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Estimated Points Banner */}
-                    <div className="alert alert-success text-center mb-4">
-                        <strong>🎁 Estimated Points: +{estimatedPoints} points</strong>
-                        <br />
-                        <small>Points calculated based on waste type and weight</small>
-                    </div>
-
-                    {/* Status Messages */}
-                    {status === 'success' && (
-                        <div className="alert alert-success text-center">
-                            ✅ Pickup request submitted successfully! Our team will contact you soon.
-                        </div>
-                    )}
-                    {status === 'error' && (
-                        <div className="alert alert-danger text-center">
-                            ❌ Failed to submit. Please try again.
-                        </div>
-                    )}
-
-                    {/* Pickup Form */}
-                    <div className="card shadow-sm border-0">
                         <div className="card-body p-4">
-                            <h3 className="mb-4 fw-bold">📝 Schedule Waste Pickup</h3>
+                            {message && (
+                                <div className={`alert ${message.includes('✅') ? 'alert-success' : message.includes('✨') ? 'alert-info' : 'alert-danger'} text-center`}>
+                                    {message}
+                                </div>
+                            )}
+
+                            <div className="table-responsive mb-4">
+                                <table className="table table-sm table-bordered">
+                                    <thead className="table-success">
+                                        <tr><th>Waste Type</th><th>Points per KG</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>♻️ Plastic</td><td>10 points/kg</td></tr>
+                                        <tr><td>📄 Paper</td><td>8 points/kg</td></tr>
+                                        <tr><td>🥃 Glass</td><td>15 points/kg</td></tr>
+                                        <tr><td>💻 Electronic</td><td>25 points/kg</td></tr>
+                                        <tr><td>🌿 Organic</td><td>5 points/kg</td></tr>
+                                        <tr><td>🔩 Metal</td><td>20 points/kg</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
 
                             <form onSubmit={handleSubmit}>
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Waste Type *</label>
-                                    <select 
-                                        name="waste_type" 
-                                        className="form-select" 
-                                        value={formData.waste_type} 
-                                        onChange={handleChange}
-                                        required
-                                    >
-                                        {wasteTypes.map(w => (
-                                            <option key={w.value} value={w.value}>{w.label} (+{w.points} pts)</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Estimated Weight *</label>
-                                    <select 
-                                        name="estimated_weight" 
-                                        className="form-select" 
-                                        value={formData.estimated_weight} 
-                                        onChange={handleChange}
-                                        required
-                                    >
-                                        {weightOptions.map(w => (
-                                            <option key={w.value} value={w.value}>{w.label} (+{w.points} pts)</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="mb-3">
-                                    <label className="form-label fw-bold">Address *</label>
-                                    <textarea 
-                                        name="address" 
-                                        className="form-control" 
-                                        rows="2" 
-                                        value={formData.address} 
-                                        onChange={handleChange}
-                                        placeholder="Enter your full address"
-                                        required
-                                    />
-                                </div>
-
                                 <div className="row">
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-bold">City *</label>
-                                        <input 
-                                            type="text" 
-                                            name="city" 
-                                            className="form-control" 
-                                            value={formData.city} 
-                                            onChange={handleChange}
-                                            placeholder="City"
-                                            required
-                                        />
+                                        <label className="form-label fw-bold">Waste Type *</label>
+                                        <select name="waste_type" className="form-select" value={formData.waste_type} onChange={handleChange} required>
+                                            <option value="">Select waste type</option>
+                                            <option value="plastic">♻️ Plastic</option>
+                                            <option value="paper">📄 Paper</option>
+                                            <option value="glass">🥃 Glass</option>
+                                            <option value="electronic">💻 Electronic</option>
+                                            <option value="organic">🌿 Organic</option>
+                                            <option value="metal">🔩 Metal</option>
+                                        </select>
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-bold">Pincode *</label>
-                                        <input 
-                                            type="text" 
-                                            name="pincode" 
-                                            className="form-control" 
-                                            value={formData.pincode} 
-                                            onChange={handleChange}
-                                            placeholder="Pincode"
-                                            required
-                                        />
+                                        <label className="form-label fw-bold">Weight (kg) *</label>
+                                        <input type="number" name="weight" className="form-control" placeholder="Enter weight in kg" step="0.1" value={formData.weight} onChange={handleChange} required />
                                     </div>
+                                </div>
+
+                                <div className="mb-3">
+                                    <label className="form-label fw-bold">Pickup Address *</label>
+                                    <textarea name="address" className="form-control" rows="2" placeholder="Enter your full address" value={formData.address} onChange={handleChange} required></textarea>
                                 </div>
 
                                 <div className="row">
                                     <div className="col-md-6 mb-3">
                                         <label className="form-label fw-bold">Preferred Date *</label>
-                                        <input 
-                                            type="date" 
-                                            name="preferred_date" 
-                                            className="form-control" 
-                                            value={formData.preferred_date} 
-                                            onChange={handleChange}
-                                            required
-                                        />
+                                        <input type="date" name="preferred_date" className="form-control" value={formData.preferred_date} onChange={handleChange} required />
                                     </div>
                                     <div className="col-md-6 mb-3">
-                                        <label className="form-label fw-bold">Preferred Time *</label>
-                                        <select 
-                                            name="preferred_time" 
-                                            className="form-select" 
-                                            value={formData.preferred_time} 
-                                            onChange={handleChange}
-                                            required
-                                        >
-                                            {timeOptions.map(t => (
-                                                <option key={t.value} value={t.value}>{t.label}</option>
-                                            ))}
-                                        </select>
+                                        <label className="form-label fw-bold">Preferred Time</label>
+                                        <input type="time" name="preferred_time" className="form-control" value={formData.preferred_time} onChange={handleChange} />
                                     </div>
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="form-label fw-bold">Additional Notes (Optional)</label>
-                                    <textarea 
-                                        name="notes" 
-                                        className="form-control" 
-                                        rows="2" 
-                                        value={formData.notes} 
-                                        onChange={handleChange}
-                                        placeholder="Any special instructions..."
-                                    />
+                                    <label className="form-label fw-bold">Additional Notes</label>
+                                    <textarea name="notes" className="form-control" rows="2" placeholder="Any special instructions?" value={formData.notes} onChange={handleChange}></textarea>
                                 </div>
 
-                                <button 
-                                    type="submit" 
-                                    className="btn btn-success w-100 py-3 fw-bold fs-5"
-                                    disabled={loading}
-                                >
-                                    {loading ? 'Submitting...' : '🚛 Schedule Pickup'}
+                                <button type="submit" className="btn btn-success w-100 py-3 fw-bold fs-5 rounded-pill" disabled={loading}>
+                                    {loading ? <span><span className="spinner-border spinner-border-sm me-2"></span>Scheduling...</span> : <span>🗑️ Schedule Pickup</span>}
                                 </button>
                             </form>
                         </div>
                     </div>
+                </div>
 
-                    {/* Guidelines */}
-                    <div className="card shadow-sm border-0 mt-4">
-                        <div className="card-body p-4">
-                            <h4 className="fw-bold mb-3">♻️ Guidelines</h4>
-                            <p><strong>✅ Accepted:</strong> Plastic, Paper, Glass, Metal, E-Waste, Organic</p>
-                            <p><strong>❌ Not Accepted:</strong> Hazardous chemicals, Medical waste, Sanitary waste</p>
-                            <small className="text-muted">Please rinse containers before disposal.</small>
+                <div className="col-lg-5">
+                    <div className="card border-0 shadow-lg rounded-4">
+                        <div className="card-header bg-white border-0 pt-4">
+                            <h3 className="fw-bold text-center">📋 Pickup History</h3>
+                        </div>
+                        <div className="card-body p-4" style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                            {pickupHistory.length === 0 ? (
+                                <div className="text-center text-muted py-4">
+                                    <span className="display-4">🗑️</span>
+                                    <p>No pickups yet. Schedule your first pickup!</p>
+                                </div>
+                            ) : (
+                                pickupHistory.map((pickup, index) => (
+                                    <div key={index} className="border-bottom mb-3 pb-3">
+                                        <div className="d-flex justify-content-between">
+                                            <strong>{pickup.waste_type} - {pickup.weight}kg</strong>
+                                            <span className="text-success fw-bold">+{pickup.points_earned || calculatePoints(pickup.waste_type, pickup.weight)} pts</span>
+                                        </div>
+                                        <small className="text-muted">{new Date(pickup.preferred_date).toLocaleDateString()}</small>
+                                        <div><span className={`badge ${pickup.status === 'completed' ? 'bg-success' : pickup.status === 'pending' ? 'bg-warning' : 'bg-secondary'}`}>{pickup.status}</span></div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
