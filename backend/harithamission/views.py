@@ -7,6 +7,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .models import Reward, RewardRedemption, Volunteer
 from .serializers import RewardRedemptionSerializer
+from .models import Mission, Volunteer, WastePickup, ContactMessage, Reward, RewardRedemption, MissionRegistration
+from .serializers import (
+    MissionSerializer, VolunteerSerializer, WastePickupSerializer,
+    ContactMessageSerializer, UserSerializer, RewardSerializer, RewardRedemptionSerializer,
+    RegisterSerializer, MissionRegistrationSerializer
+)
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.contrib.auth.models import User
@@ -295,8 +301,12 @@ class MissionRegistrationViewSet(viewsets.ModelViewSet):
         volunteer, _ = Volunteer.objects.get_or_create(user=self.request.user)
         serializer.save(volunteer=volunteer)
 
-
 class VolunteerViewSet(viewsets.ModelViewSet):
+    """ViewSet for viewing and editing volunteers"""
     queryset = Volunteer.objects.all()
     serializer_class = VolunteerSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # Allow anyone to view volunteers for leaderboard
+    
+    def get_queryset(self):
+        # Return all volunteers, ordered by total_points descending
+        return Volunteer.objects.all().order_by('-total_points')

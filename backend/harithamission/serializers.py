@@ -69,13 +69,13 @@ class MissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Mission
         fields = '__all__'
-
+        
 class VolunteerSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     
     class Meta:
         model = Volunteer
-        fields = '__all__'
+        fields = ['id', 'user', 'phone', 'city', 'total_points', 'total_hours', 'joined_date', 'is_active']
 
 class WastePickupSerializer(serializers.ModelSerializer):
     volunteer_name = serializers.CharField(source='volunteer.user.username', read_only=True)

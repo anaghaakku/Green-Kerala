@@ -8,6 +8,7 @@ router.register('missions', views.MissionViewSet)
 router.register('pickups', views.WastePickupViewSet)
 router.register('contact', views.ContactMessageViewSet)
 router.register('rewards', views.RewardViewSet)
+router.register('volunteers', views.VolunteerViewSet)
 router.register('redemptions', views.RewardRedemptionViewSet)
 router.register('mission-registrations', views.MissionRegistrationViewSet)  
 
