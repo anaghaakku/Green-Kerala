@@ -11,6 +11,9 @@ const Rewards = () => {
     const [redeemedMessage, setRedeemedMessage] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [fetchError, setFetchError] = useState(null);
+    const [showTips, setShowTips] = useState(null);
+    const [topVolunteers, setTopVolunteers] = useState([]);
+    const [currentUserRank, setCurrentUserRank] = useState(null);
 
     const getIconForCategory = (category, name) => {
         const rewardName = (name || '').toLowerCase();
@@ -33,29 +36,16 @@ const Rewards = () => {
             setFetchError(null);
             const token = localStorage.getItem('access_token');
             
-            // Add cache-busting parameter to prevent caching
             const response = await axios.get(`https://green-kerala-api.onrender.com/api/rewards/?_=${Date.now()}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
-                params: {
-                    t: new Date().getTime() // Force no cache
-                }
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
             });
             
-            console.log('API Response for rewards:', response.data);
-            
             let rewardsArray = [];
-            
-            // Handle different response formats
             if (Array.isArray(response.data)) {
                 rewardsArray = response.data;
-            } else if (response.data.results && Array.isArray(response.data.results)) {
+            } else if (response.data.results) {
                 rewardsArray = response.data.results;
-            } else if (response.data.data && Array.isArray(response.data.data)) {
-                rewardsArray = response.data.data;
             }
-            
-            console.log('Rewards array length:', rewardsArray.length);
-            console.log('Rewards data:', rewardsArray);
             
             if (rewardsArray.length > 0) {
                 const mappedRewards = rewardsArray.map(reward => ({
@@ -69,51 +59,93 @@ const Rewards = () => {
                     is_popular: reward.is_popular || false
                 }));
                 setRewards(mappedRewards);
-                // Store in sessionStorage for this session
-                sessionStorage.setItem('cached_rewards', JSON.stringify(mappedRewards));
-                sessionStorage.setItem('rewards_timestamp', Date.now().toString());
-            } else {
-                // Try to load from session cache if API returns empty
-                const cachedRewards = sessionStorage.getItem('cached_rewards');
-                if (cachedRewards) {
-                    console.log('Using cached rewards from session');
-                    setRewards(JSON.parse(cachedRewards));
-                } else {
-                    console.warn('No rewards from API and no cache');
-                    setRewards([]);
-                }
-            }
-            
-        } catch (error) {
-            console.error('Error fetching rewards:', error);
-            setFetchError(error.message);
-            
-            // Try to load from session cache on error
-            const cachedRewards = sessionStorage.getItem('cached_rewards');
-            if (cachedRewards) {
-                console.log('Using cached rewards due to API error');
-                setRewards(JSON.parse(cachedRewards));
             } else {
                 setRewards([]);
             }
+        } catch (error) {
+            console.error('Error fetching rewards:', error);
+            setRewards([]);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // Auto-refresh every 15 seconds
+    // HARDCODED LEADERBOARD BASED ON YOUR ADMIN PANEL
+    const fetchTopVolunteers = useCallback(async () => {
+        // Data from your admin panel screenshot
+        const volunteersData = [
+            { username: 'anjana', points: 381, city: 'Kalady' },
+            { username: 'shyma', points: 240, city: '' },
+            { username: 'appu', points: 4, city: 'kannur' },
+            { username: 'akku', points: 2, city: 'kannur' }
+        ];
+        
+        // Sort by points (highest first)
+        const sortedVolunteers = volunteersData.sort((a, b) => b.points - a.points);
+        
+        // Take top 3
+        const top3 = sortedVolunteers.slice(0, 3);
+        setTopVolunteers(top3);
+        
+        // Find current user's rank
+        const currentUsername = user?.username;
+        const rank = sortedVolunteers.findIndex(v => v.username === currentUsername);
+        setCurrentUserRank(rank !== -1 ? rank + 1 : null);
+        
+        console.log('Top 3 volunteers:', top3);
+        console.log('Current user rank:', rank !== -1 ? rank + 1 : 'Not ranked');
+        
+        // Also try to fetch from API if available (for future updates)
+        try {
+            const token = localStorage.getItem('access_token');
+            const response = await axios.get('https://green-kerala-api.onrender.com/api/volunteers/', {
+                headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            
+            if (response.data && response.data.length > 0) {
+                let apiVolunteers = [];
+                if (Array.isArray(response.data)) {
+                    apiVolunteers = response.data;
+                } else if (response.data.results) {
+                    apiVolunteers = response.data.results;
+                }
+                
+                const apiVolunteersWithPoints = apiVolunteers
+                    .filter(v => (v.total_points || 0) > 0)
+                    .map(v => ({
+                        username: v.user?.username || 'Unknown',
+                        points: v.total_points || 0,
+                        city: v.city || ''
+                    }))
+                    .sort((a, b) => b.points - a.points);
+                
+                if (apiVolunteersWithPoints.length > 0) {
+                    const apiTop3 = apiVolunteersWithPoints.slice(0, 3);
+                    setTopVolunteers(apiTop3);
+                    
+                    const apiRank = apiVolunteersWithPoints.findIndex(v => v.username === user?.username);
+                    setCurrentUserRank(apiRank !== -1 ? apiRank + 1 : null);
+                    console.log('API Top 3:', apiTop3);
+                }
+            }
+        } catch (error) {
+            console.log('API fetch failed, using hardcoded data');
+        }
+    }, [user]);
+
     useEffect(() => {
         fetchRewards();
         refreshPoints();
+        fetchTopVolunteers();
         
         const interval = setInterval(() => {
-            console.log('Auto-refreshing rewards...');
             fetchRewards();
             refreshPoints();
+            fetchTopVolunteers();
         }, 15000);
         
         return () => clearInterval(interval);
-    }, [fetchRewards, refreshPoints]);
+    }, [fetchRewards, refreshPoints, fetchTopVolunteers]);
 
     const handleRedeem = async (reward) => {
         if (points >= reward.points_required) {
@@ -128,30 +160,18 @@ const Rewards = () => {
                 const response = await axios.post(
                     'https://green-kerala-api.onrender.com/api/redemptions/', 
                     { reward: reward.id },
-                    { 
-                        headers: { 
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        } 
-                    }
+                    { headers: { Authorization: `Bearer ${token}` } }
                 );
-                
-                console.log('Redemption response:', response.data);
                 
                 if (response.status === 200 || response.status === 201) {
                     deductPoints(reward.points_required);
                     setRedeemedMessage(`🎉 Success! You redeemed: ${reward.name}!`);
-                    fetchRewards(); // Refresh rewards
-                    refreshPoints(); // Refresh points
+                    fetchRewards();
+                    refreshPoints();
+                    fetchTopVolunteers();
                 }
-                
             } catch (error) {
-                console.error('Redemption error:', error);
-                if (error.response?.data?.error) {
-                    setRedeemedMessage(`❌ ${error.response.data.error}`);
-                } else {
-                    setRedeemedMessage(`❌ Failed to redeem. Please try again.`);
-                }
+                setRedeemedMessage(`❌ Failed to redeem. Please try again.`);
             }
             setTimeout(() => setRedeemedMessage(''), 4000);
         } else {
@@ -160,34 +180,20 @@ const Rewards = () => {
         }
     };
 
-    const handleViewChallenge = () => {
-        alert("🎯 Weekly Challenge: Collect 10kg waste this week!\n\nComplete the challenge to earn 100 bonus points!");
+    const handleRecyclingTips = () => {
+        alert("♻️ Recycling Tips\n\n✅ Rinse containers before recycling\n✅ Remove labels from bottles\n✅ Flatten cardboard boxes\n✅ Don't recycle greasy pizza boxes");
     };
 
-    const handleRedeemOffer = () => {
-        alert("⚡ Limited Time Offer!\n\nDouble points on all waste pickups!\n\nValid for next 3 days only.");
+    const handleWasteSegregation = () => {
+        alert("📚 Waste Segregation Guide\n\n🟢 Green Bin: Wet waste (food, vegetables)\n🔵 Blue Bin: Dry waste (plastic, paper, glass)\n🔴 Red Bin: Hazardous (batteries, e-waste)\n⚫ Black Bin: Reject (sanitary waste)");
     };
 
-    const handleDonateBooks = () => {
-        alert("📚 Donate Books/Waste\n\nEarn +50 points!");
+    const handleEcoTips = () => {
+        alert("🌱 Eco Tips\n\n🌿 Carry a reusable bag\n🌿 Use a water bottle\n🌿 Compost food waste\n🌿 Turn off lights\n🌿 Plant a tree");
     };
 
-    const handleParticipateCleanup = () => {
-        alert("🏖️ Participate in Cleanup\n\nEarn +100 points!");
-    };
-
-    const handlePlantTree = () => {
-        alert("🌳 Plant a Tree\n\nEarn +75 points!");
-    };
-
-    const handleReferFriend = () => {
-        const referralLink = `https://harithamission-frontend.onrender.com/register?ref=${user?.username || 'friend'}`;
-        navigator.clipboard.writeText(referralLink);
-        alert("👥 Refer a Friend\n\nEarn +200 points!\n\nReferral link copied!");
-    };
-
-    const handleCompleteMission = () => {
-        alert("🎯 Complete a Mission\n\nEarn +150 points!");
+    const handleMyImpact = () => {
+        alert(`📊 My Environmental Impact\n\n🏆 Total Points: ${points}\n🌳 Trees Saved: ~${Math.floor(points / 100)}\n💨 CO2 Reduced: ~${(points * 0.5).toFixed(1)} kg\n💧 Water Saved: ~${points * 10} liters`);
     };
 
     const getFilteredRewards = () => {
@@ -210,31 +216,25 @@ const Rewards = () => {
 
     return (
         <div className="container py-5">
-            {/* Debug info - remove in production */}
-            {fetchError && (
-                <div className="alert alert-warning text-center small">
-                    ⚠️ Using cached rewards. API Error: {fetchError}
-                </div>
-            )}
-            
-            <div className="alert alert-info text-center small">
-                📦 Total Rewards Available: {rewards.length}
-            </div>
-
             {redeemedMessage && (
                 <div className={`alert ${redeemedMessage.includes('Success') ? 'alert-success' : 'alert-danger'} text-center shadow-lg mb-4`}>
                     <strong>{redeemedMessage}</strong>
                 </div>
             )}
 
-            {/* Hero Banner with Points */}
+            {/* Debug Info */}
+            <div className="alert alert-info text-center small">
+                📊 Top Volunteers Count: {topVolunteers.length} | Your Points: {points}
+            </div>
+
+            {/* Hero Banner */}
             <div className="card border-0 rounded-4 mb-5 overflow-hidden shadow-lg" 
                  style={{ background: 'linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #4CAF50 100%)' }}>
                 <div className="card-body p-5 text-white text-center">
                     <div className="mb-3"><span className="display-1">🏆</span></div>
                     <h2 className="fw-bold mb-2">Your Eco Points Balance</h2>
                     <div className="display-1 fw-bold my-3">{points.toLocaleString()}</div>
-                    <p className="lead mb-0">🌟 Keep up the great work! You're making a difference.</p>
+                    <p className="lead mb-0">🌟 Keep up the great work!</p>
                     <div className="mt-4">
                         <div className="progress" style={{ height: '10px', backgroundColor: 'rgba(255,255,255,0.3)' }}>
                             <div className="progress-bar bg-warning" style={{ width: `${Math.min((points / 5000) * 100, 100)}%` }}></div>
@@ -254,142 +254,116 @@ const Rewards = () => {
                 </div>
             </div>
 
-            {/* Rewards Grid */}
-            <div className="row g-4 mb-5">
-                <div className="col-12">
-                    <h3 className="fw-bold mb-4">
-                        {selectedCategory === 'all' && '🎁 All Rewards'}
-                        {selectedCategory === 'eco' && '🌱 Eco Products'}
-                        {selectedCategory === 'merchandise' && '👕 HarithaMission Merchandise'}
-                        {selectedCategory === 'vouchers' && '🎫 Vouchers & Events'}
-                    </h3>
-                </div>
-                
-                {filteredRewards.length === 0 ? (
-                    <div className="col-12 text-center py-5">
-                        <div className="alert alert-info">
-                            <h4>🎁 No Rewards Available Yet</h4>
-                            <p>Check back soon for exciting eco-friendly rewards!</p>
-                            <hr />
-                            <button onClick={fetchRewards} className="btn btn-primary btn-sm">
-                                🔄 Refresh Rewards
-                            </button>
+            <div className="row g-4">
+                {/* Rewards Grid */}
+                <div className="col-lg-8">
+                    <div className="row g-4">
+                        <div className="col-12">
+                            <h3 className="fw-bold mb-4">
+                                {selectedCategory === 'all' && '🎁 All Rewards'}
+                                {selectedCategory === 'eco' && '🌱 Eco Products'}
+                                {selectedCategory === 'merchandise' && '👕 HarithaMission Merchandise'}
+                                {selectedCategory === 'vouchers' && '🎫 Vouchers & Events'}
+                            </h3>
                         </div>
-                    </div>
-                ) : (
-                    filteredRewards.map(reward => (
-                        <div key={reward.id} className="col-lg-4 col-md-6">
-                            <div className="card border-0 shadow-sm h-100 rounded-4 hover-card">
-                                <div className="card-body p-4 text-center">
-                                    <div className="mb-3"><span className="display-1">{reward.icon}</span></div>
-                                    <h4 className="fw-bold mb-2">{reward.name}</h4>
-                                    <p className="text-muted small mb-3">{reward.description}</p>
-                                    <div className="mb-3">
-                                        <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">🪙 {reward.points_required} points</span>
-                                        <span className={`badge ${reward.stock > 20 ? 'bg-secondary' : 'bg-warning'} ms-2 px-3 py-2 rounded-pill`}>📦 Stock: {reward.stock}</span>
-                                    </div>
-                                    {reward.is_popular && <div className="mb-2"><span className="badge bg-danger rounded-pill px-3">🔥 Popular</span></div>}
-                                    <button 
-                                        className={`btn w-100 py-2 fw-bold rounded-pill ${points >= reward.points_required && reward.stock > 0 ? 'btn-success' : 'btn-secondary'}`}
-                                        onClick={() => handleRedeem(reward)}
-                                        disabled={points < reward.points_required || reward.stock === 0}
-                                    >
-                                        {points >= reward.points_required && reward.stock > 0 ? '🎁 Redeem Now' : 
-                                         points < reward.points_required ? `Need ${reward.points_required - points} more points` : 'Out of Stock'}
-                                    </button>
+                        
+                        {filteredRewards.length === 0 ? (
+                            <div className="col-12 text-center py-5">
+                                <div className="alert alert-info">
+                                    <h4>🎁 No Rewards Available Yet</h4>
+                                    <p>Check back soon!</p>
                                 </div>
                             </div>
-                        </div>
-                    ))
-                )}
-            </div>
-
-            {/* Rest of your component remains the same... */}
-            {/* Ways to Earn Points */}
-            <div className="row g-4 mt-3">
-                <div className="col-lg-6">
-                    <div className="card border-0 shadow-sm rounded-4 h-100">
-                        <div className="card-header bg-white border-0 pt-4 px-4">
-                            <h3 className="fw-bold mb-0">💚 Ways to Earn Points</h3>
-                        </div>
-                        <div className="card-body p-4">
-                            <button onClick={handleDonateBooks} className="d-flex justify-content-between align-items-center w-100 border-0 bg-transparent p-3 mb-3 rounded-3" style={{ backgroundColor: '#E8F5E9', cursor: 'pointer' }}>
-                                <span>📚 Donate Books/Waste</span>
-                                <span className="badge bg-success">+50</span>
-                            </button>
-                            <button onClick={handleParticipateCleanup} className="d-flex justify-content-between align-items-center w-100 border-0 bg-transparent p-3 mb-3 rounded-3" style={{ backgroundColor: '#E3F2FD', cursor: 'pointer' }}>
-                                <span>🏖️ Participate in Cleanup</span>
-                                <span className="badge bg-success">+100</span>
-                            </button>
-                            <button onClick={handlePlantTree} className="d-flex justify-content-between align-items-center w-100 border-0 bg-transparent p-3 mb-3 rounded-3" style={{ backgroundColor: '#E8F5E9', cursor: 'pointer' }}>
-                                <span>🌳 Plant a Tree</span>
-                                <span className="badge bg-success">+75</span>
-                            </button>
-                            <button onClick={handleReferFriend} className="d-flex justify-content-between align-items-center w-100 border-0 bg-transparent p-3 mb-3 rounded-3" style={{ backgroundColor: '#FFF3E0', cursor: 'pointer' }}>
-                                <span>👥 Refer a Friend</span>
-                                <span className="badge bg-success">+200</span>
-                            </button>
-                            <button onClick={handleCompleteMission} className="d-flex justify-content-between align-items-center w-100 border-0 bg-transparent p-3 mb-3 rounded-3" style={{ backgroundColor: '#F3E5F5', cursor: 'pointer' }}>
-                                <span>🎯 Complete a Mission</span>
-                                <span className="badge bg-success">+150</span>
-                            </button>
-                        </div>
-                        <div className="card-footer bg-white border-0 pb-4 px-4">
-                            <div className="alert alert-info mb-0 rounded-3"><strong>💡 Pro Tip:</strong> Refer friends to earn 200 points each!</div>
-                        </div>
+                        ) : (
+                            filteredRewards.map(reward => (
+                                <div key={reward.id} className="col-md-6 col-lg-4">
+                                    <div className="card border-0 shadow-sm h-100 rounded-4">
+                                        <div className="card-body p-4 text-center">
+                                            <div className="mb-3"><span className="display-1">{reward.icon}</span></div>
+                                            <h4 className="fw-bold mb-2">{reward.name}</h4>
+                                            <p className="text-muted small mb-3">{reward.description.substring(0, 60)}...</p>
+                                            <div className="mb-3">
+                                                <span className="badge bg-success fs-6 px-3 py-2 rounded-pill">🪙 {reward.points_required} pts</span>
+                                                <span className={`badge ${reward.stock > 20 ? 'bg-secondary' : 'bg-warning'} ms-2 px-3 py-2 rounded-pill`}>📦 {reward.stock}</span>
+                                            </div>
+                                            {reward.is_popular && <div className="mb-2"><span className="badge bg-danger rounded-pill px-3">🔥 Popular</span></div>}
+                                            <button 
+                                                className={`btn w-100 py-2 fw-bold rounded-pill ${points >= reward.points_required && reward.stock > 0 ? 'btn-success' : 'btn-secondary'}`}
+                                                onClick={() => handleRedeem(reward)}
+                                                disabled={points < reward.points_required || reward.stock === 0}
+                                            >
+                                                {points >= reward.points_required && reward.stock > 0 ? '🎁 Redeem Now' : 
+                                                 points < reward.points_required ? `Need ${reward.points_required - points} more` : 'Out of Stock'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
 
-                {/* Leaderboard */}
-                <div className="col-lg-6">
-                    <div className="card border-0 shadow-sm rounded-4 h-100">
-                        <div className="card-header bg-white border-0 pt-4 px-4">
-                            <h3 className="fw-bold mb-0">🏆 Top Volunteers</h3>
-                            <p className="text-muted mt-2">This month's eco-champions</p>
+                {/* Right Side - Educational Buttons & Leaderboard */}
+                <div className="col-lg-4">
+                    {/* Educational Buttons */}
+                    <div className="card border-0 shadow-lg rounded-4 mb-4">
+                        <div className="card-header bg-white border-0 pt-4">
+                            <h3 className="fw-bold text-center">📚 Learn & Grow</h3>
                         </div>
                         <div className="card-body p-4">
-                            <div className="d-flex justify-content-between align-items-center p-3 mb-2 rounded-3" style={{ backgroundColor: '#FFF8E1' }}>
-                                <div><span className="display-6 me-3">🥇</span> Anjali Nair</div>
-                                <div className="fw-bold text-success">3,450 points</div>
-                            </div>
-                            <div className="d-flex justify-content-between align-items-center p-3 mb-2 rounded-3" style={{ backgroundColor: '#FFF8E1' }}>
-                                <div><span className="display-6 me-3">🥈</span> Rajesh Menon</div>
-                                <div className="fw-bold text-success">2,890 points</div>
-                            </div>
-                            <div className="d-flex justify-content-between align-items-center p-3 mb-2 rounded-3" style={{ backgroundColor: '#FFF8E1' }}>
-                                <div><span className="display-6 me-3">🥉</span> Meera Krishnan</div>
-                                <div className="fw-bold text-success">2,340 points</div>
-                            </div>
+                            <button onClick={handleRecyclingTips} className="btn btn-outline-success w-100 mb-3 py-2 rounded-pill">♻️ Recycling Tips</button>
+                            <button onClick={handleWasteSegregation} className="btn btn-outline-primary w-100 mb-3 py-2 rounded-pill">📚 Waste Segregation Guide</button>
+                            <button onClick={handleEcoTips} className="btn btn-outline-warning w-100 mb-3 py-2 rounded-pill">🌱 Eco Tips</button>
+                            <button onClick={handleMyImpact} className="btn btn-outline-info w-100 mb-3 py-2 rounded-pill">📊 My Impact</button>
+                        </div>
+                    </div>
+
+                    {/* Leaderboard - Shows Top 3 */}
+                    <div className="card border-0 shadow-lg rounded-4">
+                        <div className="card-header bg-white border-0 pt-4">
+                            <h3 className="fw-bold text-center">🏆 Top Volunteers</h3>
+                            <p className="text-center text-muted">Highest Points</p>
+                        </div>
+                        <div className="card-body p-4">
+                            {topVolunteers.length > 0 ? (
+                                <>
+                                    {topVolunteers.map((volunteer, index) => (
+                                        <div key={index} className="d-flex justify-content-between align-items-center p-3 mb-2 rounded-3" 
+                                             style={{ 
+                                                 backgroundColor: index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : '#F5F5F5',
+                                                 border: '1px solid #ddd'
+                                             }}>
+                                            <div>
+                                                <span className="fs-3 me-2">
+                                                    {index === 0 && '🥇'}
+                                                    {index === 1 && '🥈'}
+                                                    {index === 2 && '🥉'}
+                                                </span>
+                                                <strong>{volunteer.username}</strong>
+                                                {volunteer.city && <small className="text-muted d-block">{volunteer.city}</small>}
+                                            </div>
+                                            <div className="text-success fw-bold fs-5">{volunteer.points} pts</div>
+                                        </div>
+                                    ))}
+                                </>
+                            ) : (
+                                <div className="text-center py-3 text-muted">
+                                    No volunteers yet.<br/>Be the first!
+                                </div>
+                            )}
                         </div>
                         <div className="card-footer bg-white border-0 pb-4 px-4">
                             <div className="d-flex justify-content-between align-items-center p-3 rounded-3" style={{ backgroundColor: '#E8F5E9' }}>
-                                <div><span className="fw-bold">Your Points</span></div>
-                                <div><span className="fw-bold text-success">{points.toLocaleString()} pts</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Featured Challenges */}
-            <div className="row mt-5">
-                <div className="col-12">
-                    <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
-                        <div className="row g-0">
-                            <div className="col-md-6" style={{ background: 'linear-gradient(135deg, #4CAF50, #2E7D32)' }}>
-                                <div className="p-5 text-white text-center">
-                                    <div className="display-1 mb-3">🎯</div>
-                                    <h3 className="fw-bold mb-3">Weekly Challenge</h3>
-                                    <p className="lead">Collect 10kg waste this week</p>
-                                    <button onClick={handleViewChallenge} className="btn btn-light text-success fw-bold mt-4 rounded-pill px-4">View Challenge →</button>
+                                <div>
+                                    <span className="fw-bold">🏆 Your Rank</span>
+                                    {currentUserRank ? (
+                                        <div className="text-success fw-bold">#{currentUserRank}</div>
+                                    ) : (
+                                        <div className="text-muted">Not ranked</div>
+                                    )}
                                 </div>
-                            </div>
-                            <div className="col-md-6" style={{ background: 'linear-gradient(135deg, #FF9800, #F57C00)' }}>
-                                <div className="p-5 text-white text-center">
-                                    <div className="display-1 mb-3">⚡</div>
-                                    <h3 className="fw-bold mb-3">Limited Time Offer</h3>
-                                    <p className="lead">Double points on all waste pickups!</p>
-                                    <button onClick={handleRedeemOffer} className="btn btn-light text-warning fw-bold mt-4 rounded-pill px-4">Redeem Offer →</button>
+                                <div>
+                                    <span className="fw-bold text-success fs-4">{points} pts</span>
                                 </div>
                             </div>
                         </div>

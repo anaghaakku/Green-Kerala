@@ -294,3 +294,9 @@ class MissionRegistrationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         volunteer, _ = Volunteer.objects.get_or_create(user=self.request.user)
         serializer.save(volunteer=volunteer)
+
+
+class VolunteerViewSet(viewsets.ModelViewSet):
+    queryset = Volunteer.objects.all()
+    serializer_class = VolunteerSerializer
+    permission_classes = [AllowAny]
