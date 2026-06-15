@@ -1,143 +1,3 @@
-# # from django.contrib import admin
-# # from django.utils.html import format_html
-# # from .models import (
-# #     Mission, Volunteer, WastePickup, MissionRegistration,
-# #     ContactMessage, Reward, RewardRedemption
-# # )
-
-# # # Custom admin header
-# # admin.site.site_header = "🌿 HarithaMission Admin Panel"
-# # admin.site.site_title = "HarithaMission"
-# # admin.site.index_title = "Welcome to HarithaMission Dashboard"
-
-# # @admin.register(Mission)
-# # class MissionAdmin(admin.ModelAdmin):
-# #     list_display = ['title', 'location', 'date', 'spots_available', 'status']
-# #     list_filter = ['status', 'location']
-# #     search_fields = ['title']
-
-# # @admin.register(Volunteer)
-# # class VolunteerAdmin(admin.ModelAdmin):
-# #     list_display = ['user', 'phone', 'city', 'total_points', 'is_active']
-# #     list_filter = ['city', 'is_active']
-# #     search_fields = ['user__username', 'phone']
-
-# # @admin.register(WastePickup)
-# # class WastePickupAdmin(admin.ModelAdmin):
-# #     list_display = ['id', 'volunteer', 'waste_type', 'status', 'preferred_date']
-# #     list_filter = ['status', 'waste_type']
-# #     search_fields = ['volunteer__user__username']
-
-# # @admin.register(MissionRegistration)
-# # class MissionRegistrationAdmin(admin.ModelAdmin):
-# #     list_display = ['volunteer', 'mission', 'registered_date', 'status']
-# #     list_filter = ['status']
-# #     search_fields = ['volunteer__user__username']
-
-# # @admin.register(ContactMessage)
-# # class ContactMessageAdmin(admin.ModelAdmin):
-# #     list_display = ['name', 'email', 'subject', 'created_at', 'is_read']
-# #     list_filter = ['is_read']
-# #     search_fields = ['name', 'email']
-
-# # @admin.register(Reward)
-# # class RewardAdmin(admin.ModelAdmin):
-# #     list_display = ['name', 'category', 'points_required', 'stock']
-# #     list_filter = ['category']
-# #     search_fields = ['name']
-
-# # @admin.register(RewardRedemption)
-# # class RewardRedemptionAdmin(admin.ModelAdmin):
-# #     list_display = ['volunteer', 'reward', 'points_spent', 'redeemed_date', 'status']
-# #     list_filter = ['status']
-# #     search_fields = ['volunteer__user__username']
-
-# from django.contrib import admin
-# from django.contrib.auth.admin import UserAdmin
-# from django.contrib.auth.models import User
-# from django.utils.html import format_html
-# from .models import (
-#     Mission, Volunteer, WastePickup, MissionRegistration,
-#     ContactMessage, Reward, RewardRedemption
-# )
-
-# # ========== CUSTOM USER ADMIN (REMOVES FIRST_NAME & LAST_NAME) ==========
-# class CustomUserAdmin(UserAdmin):
-#     """Custom User Admin without first_name and last_name"""
-    
-#     list_display = ('username', 'email', 'is_staff', 'is_active', 'date_joined')
-    
-#     fieldsets = (
-#         (None, {'fields': ('username', 'password')}),
-#         ('Personal info', {'fields': ('email',)}),  # Removed first_name, last_name
-#         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-#         ('Important dates', {'fields': ('last_login', 'date_joined')}),
-#     )
-    
-#     add_fieldsets = (
-#         (None, {
-#             'classes': ('wide',),
-#             'fields': ('username', 'email', 'password1', 'password2'),
-#         }),
-#     )
-    
-#     search_fields = ('username', 'email')
-#     ordering = ('username',)
-
-# # Unregister default User admin and register custom one
-# admin.site.unregister(User)
-# admin.site.register(User, CustomUserAdmin)
-
-# # ========== CUSTOM ADMIN HEADER ==========
-# admin.site.site_header = "🌿 HarithaMission Admin Panel"
-# admin.site.site_title = "HarithaMission"
-# admin.site.index_title = "Welcome to HarithaMission Dashboard"
-
-# # ========== MODEL ADMINS ==========
-# @admin.register(Mission)
-# class MissionAdmin(admin.ModelAdmin):
-#     list_display = ['title', 'location', 'date', 'spots_available', 'status']
-#     list_filter = ['status', 'location']
-#     search_fields = ['title']
-
-# @admin.register(Volunteer)
-# class VolunteerAdmin(admin.ModelAdmin):
-#     list_display = ['user', 'phone', 'city', 'total_points', 'is_active']
-#     list_filter = ['city', 'is_active']
-#     search_fields = ['user__username', 'phone']
-
-# @admin.register(WastePickup)
-# class WastePickupAdmin(admin.ModelAdmin):
-#     list_display = ['id', 'volunteer', 'waste_type', 'status', 'preferred_date']
-#     list_filter = ['status', 'waste_type']
-#     search_fields = ['volunteer__user__username']
-
-# @admin.register(MissionRegistration)
-# class MissionRegistrationAdmin(admin.ModelAdmin):
-#     list_display = ['volunteer', 'mission', 'registered_date', 'status']
-#     list_filter = ['status']
-#     search_fields = ['volunteer__user__username']
-
-# @admin.register(ContactMessage)
-# class ContactMessageAdmin(admin.ModelAdmin):
-#     list_display = ['name', 'email', 'subject', 'created_at', 'is_read']
-#     list_filter = ['is_read']
-#     search_fields = ['name', 'email']
-
-# @admin.register(Reward)
-# class RewardAdmin(admin.ModelAdmin):
-#     list_display = ['name', 'category', 'points_required', 'stock']
-#     list_filter = ['category']
-#     search_fields = ['name']
-
-# @admin.register(RewardRedemption)
-# class RewardRedemptionAdmin(admin.ModelAdmin):
-#     list_display = ['volunteer', 'reward', 'points_spent', 'redeemed_date', 'status']
-#     list_filter = ['status']
-#     search_fields = ['volunteer__user__username']
-
-
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
@@ -153,10 +13,8 @@ admin.site.site_header = "🌿 HarithaMission Admin Panel"
 admin.site.site_title = "HarithaMission"
 admin.site.index_title = "Welcome to HarithaMission Dashboard"
 
-# ========== CUSTOM USER ADMIN (REMOVES FIRST_NAME & LAST_NAME) ==========
+# ========== CUSTOM USER ADMIN ==========
 class CustomUserAdmin(UserAdmin):
-    """Custom User Admin without first_name and last_name"""
-    
     list_display = ('username', 'email', 'points_display', 'is_staff', 'is_active', 'date_joined')
     list_filter = ('is_active', 'is_staff', 'date_joined')
     search_fields = ('username', 'email')
@@ -184,7 +42,6 @@ class CustomUserAdmin(UserAdmin):
             return format_html('<span style="color: #999;">0</span>')
     points_display.short_description = 'Eco Points'
 
-# Unregister default User admin and register custom one
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 
@@ -193,25 +50,10 @@ admin.site.register(User, CustomUserAdmin)
 class MissionAdmin(admin.ModelAdmin):
     list_display = ('title', 'location', 'date_display', 'spots_available', 'status_badge', 'registered_count')
     list_filter = ('status', 'location', 'date')
-    search_fields = ('title', 'location', 'description')
+    search_fields = ('title', 'location')
     list_editable = ('spots_available',)
     list_per_page = 20
     date_hierarchy = 'date'
-    
-    fieldsets = (
-        ('📋 Mission Details', {
-            'fields': ('title', 'description', 'location', 'image')
-        }),
-        ('📅 Schedule', {
-            'fields': ('date', 'time')
-        }),
-        ('👥 Capacity', {
-            'fields': ('spots_total', 'spots_available')
-        }),
-        ('📊 Status', {
-            'fields': ('status',)
-        }),
-    )
     
     def date_display(self, obj):
         return obj.date.strftime('%d %b %Y')
@@ -237,29 +79,13 @@ class MissionAdmin(admin.ModelAdmin):
 @admin.register(Volunteer)
 class VolunteerAdmin(admin.ModelAdmin):
     list_display = ('user_link', 'phone', 'city', 'points_display', 'pickups_count', 'is_active_badge')
-    list_filter = ('city', 'is_active', 'joined_date')
-    search_fields = ('user__username', 'user__email', 'phone', 'city')
+    list_filter = ('city', 'is_active')
+    search_fields = ('user__username', 'phone', 'city')
     readonly_fields = ('total_points', 'total_hours', 'joined_date')
     list_per_page = 20
     
-    fieldsets = (
-        ('👤 User Information', {
-            'fields': ('user',)
-        }),
-        ('📞 Contact', {
-            'fields': ('phone', 'city')
-        }),
-        ('🏆 Statistics', {
-            'fields': ('total_points', 'total_hours', 'joined_date')
-        }),
-        ('⚙️ Status', {
-            'fields': ('is_active',)
-        }),
-    )
-    
     def user_link(self, obj):
-        url = reverse('admin:auth_user_change', args=[obj.user.id])
-        return format_html('<a href="{}" style="color: #4CAF50; font-weight: bold;">🌿 {}</a>', url, obj.user.username)
+        return format_html('<span style="font-weight: bold;">🌿 {}</span>', obj.user.username)
     user_link.short_description = 'Volunteer'
     
     def points_display(self, obj):
@@ -281,10 +107,9 @@ class VolunteerAdmin(admin.ModelAdmin):
 @admin.register(WastePickup)
 class WastePickupAdmin(admin.ModelAdmin):
     list_display = ('id', 'volunteer_name', 'waste_type_icon', 'estimated_weight', 'points_earned_display', 'preferred_date', 'status_badge')
-    list_filter = ('status', 'waste_type', 'preferred_date')
-    search_fields = ('volunteer__user__username', 'address', 'city')
+    list_filter = ('status', 'waste_type')
+    search_fields = ('volunteer__user__username', 'address')
     list_per_page = 20
-    date_hierarchy = 'preferred_date'
     
     def volunteer_name(self, obj):
         return format_html('<span style="font-weight: bold;">🌿 {}</span>', obj.volunteer.user.username)
@@ -322,7 +147,7 @@ class WastePickupAdmin(admin.ModelAdmin):
 @admin.register(MissionRegistration)
 class MissionRegistrationAdmin(admin.ModelAdmin):
     list_display = ('volunteer_link', 'mission_link', 'registered_date', 'status_badge')
-    list_filter = ('status', 'registered_date')
+    list_filter = ('status',)
     search_fields = ('volunteer__user__username', 'mission__title')
     list_per_page = 20
     
@@ -348,9 +173,8 @@ class MissionRegistrationAdmin(admin.ModelAdmin):
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
     list_display = ('name', 'email', 'subject_preview', 'created_date', 'is_read_badge')
-    list_filter = ('is_read', 'created_at')
-    search_fields = ('name', 'email', 'subject', 'message')
-    readonly_fields = ('created_at',)
+    list_filter = ('is_read',)
+    search_fields = ('name', 'email', 'subject')
     list_per_page = 20
     actions = ['mark_as_read']
     
@@ -378,21 +202,9 @@ class ContactMessageAdmin(admin.ModelAdmin):
 class RewardAdmin(admin.ModelAdmin):
     list_display = ('name', 'category_badge', 'points_display', 'stock_display', 'popular_badge')
     list_filter = ('category', 'is_popular')
-    search_fields = ('name', 'description')
+    search_fields = ('name',)
     list_editable = ('stock',)
     list_per_page = 20
-    
-    fieldsets = (
-        ('🎁 Reward Details', {
-            'fields': ('name', 'category', 'description')
-        }),
-        ('💰 Points & Stock', {
-            'fields': ('points_required', 'stock')
-        }),
-        ('⭐ Popularity', {
-            'fields': ('is_popular',)
-        }),
-    )
     
     def category_badge(self, obj):
         colors = {
@@ -425,10 +237,9 @@ class RewardAdmin(admin.ModelAdmin):
 @admin.register(RewardRedemption)
 class RewardRedemptionAdmin(admin.ModelAdmin):
     list_display = ('volunteer_link', 'reward_link', 'points_display', 'redeemed_date', 'status_badge')
-    list_filter = ('status', 'redeemed_date')
+    list_filter = ('status',)
     search_fields = ('volunteer__user__username', 'reward__name')
     list_per_page = 20
-    date_hierarchy = 'redeemed_date'
     
     def volunteer_link(self, obj):
         return format_html('<span style="font-weight: bold;">🌿 {}</span>', obj.volunteer.user.username)
