@@ -1,7 +1,7 @@
 from pathlib import Path
-from pathlib import Path
 from datetime import timedelta
 import os
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -59,15 +59,24 @@ ADMIN_SITE_HEADER = "HarithaMission Admin"
 ADMIN_SITE_TITLE = "HarithaMission"
 ADMIN_INDEX_TITLE = "Welcome to HarithaMission Dashboard"
 
-
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# ========== DATABASE CONFIGURATION - POSTGRESQL ==========
+if 'DATABASE_URL' in os.environ:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=os.environ.get('DATABASE_URL'),
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -83,7 +92,6 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -118,20 +126,19 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'HarithaMission <noreply@harithamission.org>'
 
-ADMIN_SITE_HEADER = "HarithaMission Admin"
-ADMIN_SITE_TITLE = "HarithaMission"
-
 # CSRF and CORS Settings for Render
 CSRF_TRUSTED_ORIGINS = [
     'https://green-kerala-api.onrender.com',
     'https://*.onrender.com',
     'http://localhost:8000',
+    'http://localhost:3000',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     'https://green-kerala-api.onrender.com',
     'https://*.onrender.com',
     'http://localhost:3000',
+    'http://localhost:8000',
 ]
 
 CSRF_COOKIE_SECURE = True
