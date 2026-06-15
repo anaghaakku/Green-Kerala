@@ -150,7 +150,78 @@ class RewardRedemptionAdmin(admin.ModelAdmin):
                           colors.get(obj.status, '#999'), obj.status.upper())
     status_badge.short_description = 'Status'
 
-# Mission Registration Admin
+# Mission Registration Adminfrom django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+from django.utils.html import format_html
+from .models import (
+    Mission, Volunteer, WastePickup, MissionRegistration,
+    ContactMessage, Reward, RewardRedemption
+)
+
+# Set admin header
+admin.site.site_header = "🌿 HarithaMission Admin Panel"
+admin.site.site_title = "HarithaMission"
+admin.site.index_title = "Dashboard"
+
+# Custom User Admin
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'points_display', 'is_staff', 'is_active')
+    list_filter = ('is_active', 'is_staff')
+    search_fields = ('username', 'email')
+    
+    def points_display(self, obj):
+        try:
+            volunteer = Volunteer.objects.get(user=obj)
+            return volunteer.total_points
+        except:
+            return 0
+    points_display.short_description = 'Eco Points'
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
+
+@admin.register(Mission)
+class MissionAdmin(admin.ModelAdmin):
+    list_display = ('title', 'location', 'date', 'spots_available', 'status')
+    list_filter = ('status', 'location')
+    search_fields = ('title',)
+
+@admin.register(Volunteer)
+class VolunteerAdmin(admin.ModelAdmin):
+    list_display = ('user', 'phone', 'city', 'total_points', 'is_active')
+    list_filter = ('city', 'is_active')
+    search_fields = ('user__username', 'phone')
+
+@admin.register(WastePickup)
+class WastePickupAdmin(admin.ModelAdmin):
+    list_display = ('id', 'volunteer', 'waste_type', 'status', 'preferred_date')
+    list_filter = ('status', 'waste_type')
+    search_fields = ('volunteer__user__username',)
+
+@admin.register(MissionRegistration)
+class MissionRegistrationAdmin(admin.ModelAdmin):
+    list_display = ('volunteer', 'mission', 'registered_date', 'status')
+    list_filter = ('status',)
+    search_fields = ('volunteer__user__username',)
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'subject', 'created_at', 'is_read')
+    list_filter = ('is_read',)
+    search_fields = ('name', 'email')
+
+@admin.register(Reward)
+class RewardAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'points_required', 'stock')
+    list_filter = ('category',)
+    search_fields = ('name',)
+
+@admin.register(RewardRedemption)
+class RewardRedemptionAdmin(admin.ModelAdmin):
+    list_display = ('volunteer', 'reward', 'points_spent', 'redeemed_date', 'status')
+    list_filter = ('status',)
+    search_fields = ('volunteer__user__username',)
 @admin.register(MissionRegistration)
 class MissionRegistrationAdmin(admin.ModelAdmin):
     list_display = ('volunteer', 'mission', 'registered_date', 'status_badge')
