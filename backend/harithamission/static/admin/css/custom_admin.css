@@ -1,0 +1,150 @@
+/* Custom Admin Panel Styles */
+:root {
+    --primary: #4CAF50;
+    --primary-dark: #2E7D32;
+    --primary-light: #81C784;
+    --accent: #FF9800;
+    --danger: #F44336;
+    --info: #2196F3;
+}
+
+/* Header */
+#header {
+    background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #4CAF50 100%);
+    color: white;
+    padding: 15px 20px;
+}
+
+#branding h1 {
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+#branding h1:before {
+    content: "🌿 ";
+}
+
+/* Navigation */
+#user-tools a {
+    color: white;
+    border-bottom: 1px solid rgba(255,255,255,0.3);
+}
+
+/* Module Headers */
+.module h2, .module caption {
+    background: linear-gradient(135deg, #2E7D32, #4CAF50);
+    color: white;
+    padding: 10px 15px;
+    font-weight: bold;
+}
+
+/* Buttons */
+.button, input[type=submit], input[type=button], .submit-row input {
+    background: #4CAF50;
+    border-radius: 25px;
+    padding: 8px 20px;
+    border: none;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.button:hover, input[type=submit]:hover {
+    background: #2E7D32;
+    transform: scale(1.02);
+}
+
+/* Object Tools */
+.object-tools a:link, .object-tools a:visited {
+    background: #4CAF50;
+    border-radius: 25px;
+    padding: 6px 15px;
+}
+
+.object-tools a:hover {
+    background: #2E7D32;
+}
+
+/* Tables */
+#changelist table thead th {
+    background: #E8F5E9;
+    color: #2E7D32;
+    font-weight: bold;
+}
+
+.results table tbody tr:hover {
+    background-color: #F1F8E9;
+}
+
+/* Pagination */
+.paginator a:link, .paginator a:visited {
+    background: #4CAF50;
+    color: white;
+    border-radius: 20px;
+    padding: 4px 12px;
+}
+
+.paginator a:hover {
+    background: #2E7D32;
+}
+
+/* Dashboard Cards */
+.dashboard .module table th {
+    background: #E8F5E9;
+}
+
+/* Form Elements */
+input, select, textarea {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 5px rgba(76,175,80,0.3);
+}
+
+/* Status Badges */
+.field-status .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* Alerts */
+.messagelist li {
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.messagelist li.success {
+    background: #E8F5E9;
+    color: #2E7D32;
+}
+
+.messagelist li.error {
+    background: #FFEBEE;
+    color: #F44336;
+}
+
+/* Card Layout */
+.module {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Login Page */
+.login #header {
+    background: linear-gradient(135deg, #1B5E20, #4CAF50);
+}
+
+.login .submit-row input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+}
