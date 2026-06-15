@@ -310,3 +310,27 @@ class VolunteerViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Return all volunteers, ordered by total_points descending
         return Volunteer.objects.all().order_by('-total_points')
+    
+
+# ========== TEMPORARY ADMIN CREATION (REMOVE AFTER USE) ==========
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def create_admin_superuser(request):
+    """Create admin superuser - remove this after first use"""
+    try:
+        # Try to get existing admin user
+        user, created = User.objects.get_or_create(username='admin', defaults={'email': 'admin@harithamission.org'})
+        user.set_password('admin123')
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+        
+        return Response({
+            'success': True,
+            'username': 'admin',
+            'password': 'admin123',
+            'message': 'Admin superuser created/updated successfully!',
+            'created': created
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
