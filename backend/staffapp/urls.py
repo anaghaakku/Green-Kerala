@@ -4,7 +4,8 @@ from . import views
 
 router = DefaultRouter()
 router.register('staff', views.StaffViewSet)
-router.register('staff-duties', views.StaffDutyViewSet)
+router.register('mission-duties', views.MissionDutyViewSet)
+router.register('waste-pickup-duties', views.WastePickupDutyViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

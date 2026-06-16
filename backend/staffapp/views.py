@@ -2,25 +2,35 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from .models import Staff, StaffDuty
-from .serializers import StaffSerializer, StaffDutySerializer
+from .models import Staff, MissionDuty, WastePickupDuty
+from .serializers import StaffSerializer, MissionDutySerializer, WastePickupDutySerializer
 
 class StaffViewSet(viewsets.ModelViewSet):
     queryset = Staff.objects.all()
     serializer_class = StaffSerializer
     permission_classes = [IsAuthenticated]
 
-class StaffDutyViewSet(viewsets.ModelViewSet):
-    queryset = StaffDuty.objects.all()
-    serializer_class = StaffDutySerializer
+class MissionDutyViewSet(viewsets.ModelViewSet):
+    queryset = MissionDuty.objects.all()
+    serializer_class = MissionDutySerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        # If staff user, only show their duties
         staff_id = self.request.query_params.get('staff_id')
         if staff_id:
-            return StaffDuty.objects.filter(staff_id=staff_id)
-        return StaffDuty.objects.all()
+            return MissionDuty.objects.filter(staff_id=staff_id)
+        return MissionDuty.objects.all()
+
+class WastePickupDutyViewSet(viewsets.ModelViewSet):
+    queryset = WastePickupDuty.objects.all()
+    serializer_class = WastePickupDutySerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        staff_id = self.request.query_params.get('staff_id')
+        if staff_id:
+            return WastePickupDuty.objects.filter(staff_id=staff_id)
+        return WastePickupDuty.objects.all()
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
