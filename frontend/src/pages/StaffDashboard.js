@@ -15,6 +15,9 @@ const StaffDashboard = () => {
         const staffId = localStorage.getItem('staff_id');
         const token = localStorage.getItem('access_token');
         
+        console.log('Staff ID:', staffId);
+        console.log('Token exists:', !!token);
+        
         if (!staffId) {
             navigate('/staff-login');
             return;
@@ -34,21 +37,29 @@ const StaffDashboard = () => {
             // ✅ USE THE TOKEN FOR AUTHENTICATION
             const headers = token ? { Authorization: `Bearer ${token}` } : {};
             
+            console.log('Fetching with headers:', headers);
+            
             const missionRes = await axios.get(
                 `https://green-kerala-api.onrender.com/api/staffapp/mission-duties/?staff_id=${staffId}`,
                 { headers }
             );
             
-            console.log('Mission Duties:', missionRes.data);
-            setMissionDuties(missionRes.data || []);
+            console.log('Mission Duties Response:', missionRes.data);
+            
+            // ✅ Handle paginated response (results array)
+            const missionData = missionRes.data.results || missionRes.data || [];
+            setMissionDuties(missionData);
             
             const wasteRes = await axios.get(
                 `https://green-kerala-api.onrender.com/api/staffapp/waste-pickup-duties/?staff_id=${staffId}`,
                 { headers }
             );
             
-            console.log('Waste Duties:', wasteRes.data);
-            setWasteDuties(wasteRes.data || []);
+            console.log('Waste Duties Response:', wasteRes.data);
+            
+            // ✅ Handle paginated response (results array)
+            const wasteData = wasteRes.data.results || wasteRes.data || [];
+            setWasteDuties(wasteData);
             
         } catch (error) {
             console.error('Error fetching duties:', error);
@@ -63,7 +74,6 @@ const StaffDashboard = () => {
         }
     };
 
-    // ... rest of the code (updateStatus, handleLogout, render)
     const updateStatus = async (type, dutyId, status) => {
         try {
             const token = localStorage.getItem('access_token');
