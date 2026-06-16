@@ -14,47 +14,24 @@ const StaffLogin = () => {
         setLoading(true);
         setError('');
 
-        // Validate inputs
-        if (!staffId || !name) {
-            setError('Please enter both Staff ID and Name');
-            setLoading(false);
-            return;
-        }
-
         try {
-            console.log('Logging in with:', { staff_id: staffId, name: name });
-            
             const response = await axios.post('https://green-kerala-api.onrender.com/api/staffapp/staff-login/', {
                 staff_id: parseInt(staffId),
-                name: name.trim()
+                name: name
             });
-
-            console.log('Login response:', response.data);
 
             if (response.data.success) {
                 localStorage.setItem('staff_logged_in', 'true');
                 localStorage.setItem('staff_id', response.data.staff_id);
                 localStorage.setItem('staff_name', response.data.name);
-                if (response.data.staff) {
-                    localStorage.setItem('staff_data', JSON.stringify(response.data.staff));
-                }
                 navigate('/staff-dashboard');
             } else {
-                setError(response.data.message || response.data.error || 'Invalid Staff ID or Name');
+                setError('Invalid Staff ID or Name');
             }
-        } catch (error) {
-            console.error('Login error:', error);
-            if (error.response) {
-                console.error('Error response:', error.response.data);
-                setError(error.response.data?.message || error.response.data?.error || 'Login failed. Please try again.');
-            } else if (error.request) {
-                setError('Network error. Please check your connection.');
-            } else {
-                setError('An error occurred. Please try again.');
-            }
-        } finally {
-            setLoading(false);
+        } catch (err) {
+            setError('Login failed. Please try again.');
         }
+        setLoading(false);
     };
 
     return (
@@ -68,18 +45,16 @@ const StaffLogin = () => {
                                 <h2 className="fw-bold">Staff Login</h2>
                                 <p className="text-muted">Waste Collection Staff Portal</p>
                             </div>
-
                             {error && <div className="alert alert-danger">{error}</div>}
-
                             <form onSubmit={handleSubmit}>
                                 <div className="mb-3">
                                     <label className="form-label fw-bold">Staff ID</label>
                                     <input 
                                         type="number" 
-                                        className="form-control form-control-lg" 
+                                        className="form-control" 
                                         value={staffId} 
                                         onChange={(e) => setStaffId(e.target.value)} 
-                                        placeholder="Enter Staff ID (e.g., 1, 2, 3...)"
+                                        placeholder="Enter Staff ID"
                                         required 
                                     />
                                 </div>
@@ -87,7 +62,7 @@ const StaffLogin = () => {
                                     <label className="form-label fw-bold">Full Name</label>
                                     <input 
                                         type="text" 
-                                        className="form-control form-control-lg" 
+                                        className="form-control" 
                                         value={name} 
                                         onChange={(e) => setName(e.target.value)} 
                                         placeholder="Enter your full name"
@@ -96,25 +71,12 @@ const StaffLogin = () => {
                                 </div>
                                 <button 
                                     type="submit" 
-                                    className="btn btn-success w-100 py-2 fw-bold fs-5 rounded-pill" 
+                                    className="btn btn-success w-100 py-2 fw-bold rounded-pill" 
                                     disabled={loading}
                                 >
-                                    {loading ? (
-                                        <>
-                                            <span className="spinner-border spinner-border-sm me-2"></span>
-                                            Logging in...
-                                        </>
-                                    ) : (
-                                        '🔐 Login'
-                                    )}
+                                    {loading ? 'Logging in...' : '🔐 Login'}
                                 </button>
                             </form>
-                            
-                            <div className="text-center mt-4">
-                                <p className="text-muted small">
-                                    Contact admin if you don't have credentials
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>
