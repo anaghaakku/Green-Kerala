@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 const StaffDashboard = () => {
     const [staffName, setStaffName] = useState('');
     const [staffId, setStaffId] = useState('');
-    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -18,7 +17,6 @@ const StaffDashboard = () => {
         
         setStaffId(id);
         setStaffName(name);
-        setLoading(false);
     }, [navigate]);
 
     const handleLogout = () => {
@@ -28,22 +26,13 @@ const StaffDashboard = () => {
         navigate('/staff-login');
     };
 
-    if (loading) {
-        return (
-            <div className="text-center mt-5">
-                <div className="spinner-border text-success"></div>
-                <p>Loading...</p>
-            </div>
-        );
-    }
-
     return (
         <div className="container py-5">
             <div className="card border-0 rounded-4 mb-4 shadow-lg" style={{ background: 'linear-gradient(135deg, #1B5E20, #4CAF50)' }}>
                 <div className="card-body p-4 text-white">
                     <div className="row align-items-center">
                         <div className="col-8">
-                            <h4>👋 Welcome, {staffName}!</h4>
+                            <h4>👋 Welcome, {staffName || 'Staff'}!</h4>
                             <p className="mb-0">Staff ID: {staffId}</p>
                             <p className="mb-0">✅ You are logged in</p>
                         </div>
@@ -93,7 +82,7 @@ const StaffDashboard = () => {
                         <div className="row align-items-center">
                             <div className="col-md-8">
                                 <h5 className="fw-bold">Beach Cleanup</h5>
-                                <p className="text-muted small">📍 Kovalam | 📅 June 20, 2026 at 8:00 AM</p>
+                                <p className="text-muted small">📍 Kovalam | 📅 June 20, 2026</p>
                             </div>
                             <div className="col-md-4 text-end">
                                 <span className="badge bg-warning fs-6 px-3 py-2">PENDING</span>
@@ -104,10 +93,21 @@ const StaffDashboard = () => {
                         <div className="row align-items-center">
                             <div className="col-md-8">
                                 <h5 className="fw-bold">Tree Plantation</h5>
-                                <p className="text-muted small">📍 Munnar | 📅 June 25, 2026 at 9:30 AM</p>
+                                <p className="text-muted small">📍 Munnar | 📅 June 25, 2026</p>
                             </div>
                             <div className="col-md-4 text-end">
                                 <span className="badge bg-warning fs-6 px-3 py-2">PENDING</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div className="row align-items-center">
+                            <div className="col-md-8">
+                                <h5 className="fw-bold">City Cleanup</h5>
+                                <p className="text-muted small">📍 Kochi | 📅 June 15, 2026</p>
+                            </div>
+                            <div className="col-md-4 text-end">
+                                <span className="badge bg-success fs-6 px-3 py-2">COMPLETED</span>
                             </div>
                         </div>
                     </div>

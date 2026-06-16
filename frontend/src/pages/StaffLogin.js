@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const StaffLogin = () => {
@@ -9,29 +8,25 @@ const StaffLogin = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        try {
-            const response = await axios.post('https://green-kerala-api.onrender.com/api/staffapp/staff-login/', {
-                staff_id: parseInt(staffId),
-                name: name
-            });
-
-            if (response.data.success) {
-                localStorage.setItem('staff_logged_in', 'true');
-                localStorage.setItem('staff_id', response.data.staff_id);
-                localStorage.setItem('staff_name', response.data.name);
-                navigate('/staff-dashboard');
-            } else {
-                setError('Invalid Staff ID or Name');
-            }
-        } catch (err) {
-            setError('Login failed. Please try again.');
+        // Simple validation
+        if (!staffId || !name) {
+            setError('Please enter Staff ID and Name');
+            setLoading(false);
+            return;
         }
+
+        // Store in localStorage (no API call for now)
+        localStorage.setItem('staff_logged_in', 'true');
+        localStorage.setItem('staff_id', staffId);
+        localStorage.setItem('staff_name', name);
+        
         setLoading(false);
+        navigate('/staff-dashboard');
     };
 
     return (
@@ -50,7 +45,7 @@ const StaffLogin = () => {
                                 <div className="mb-3">
                                     <label className="form-label fw-bold">Staff ID</label>
                                     <input 
-                                        type="number" 
+                                        type="text" 
                                         className="form-control" 
                                         value={staffId} 
                                         onChange={(e) => setStaffId(e.target.value)} 
