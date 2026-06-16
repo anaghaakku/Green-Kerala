@@ -1,9 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from harithamission.models import Mission
-
 class Staff(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
+    # Remove the user field - use staff_id instead
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
@@ -18,7 +17,7 @@ class Staff(models.Model):
     joined_date = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return self.name
+        return f"{self.id} - {self.name}"
     
 class StaffDuty(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='duties')

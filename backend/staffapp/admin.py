@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Staff
+from .models import Staff, StaffDuty
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
@@ -16,7 +16,11 @@ class StaffAdmin(admin.ModelAdmin):
         ('Work Information', {
             'fields': ('role', 'is_available')
         }),
-        ('Account', {
-            'fields': ('user',)
-        }),
     )
+
+@admin.register(StaffDuty)
+class StaffDutyAdmin(admin.ModelAdmin):
+    list_display = ['staff', 'mission', 'duty_date', 'status']
+    list_filter = ['status', 'duty_date']
+    search_fields = ['staff__name', 'mission__title']
+    date_hierarchy = 'duty_date'

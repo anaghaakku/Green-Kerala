@@ -5,7 +5,7 @@ from harithamission.models import Mission
 class StaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staff
-        fields = ['id', 'user', 'name', 'phone', 'email', 'role', 'is_available', 'profile_picture', 'joined_date']
+        fields = ['id', 'name', 'phone', 'email', 'role', 'is_available', 'profile_picture', 'joined_date']
 
 class StaffDutySerializer(serializers.ModelSerializer):
     staff_name = serializers.CharField(source='staff.name', read_only=True)
