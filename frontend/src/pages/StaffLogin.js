@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const StaffLogin = () => {
@@ -8,25 +9,47 @@ const StaffLogin = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
-        // Simple validation
         if (!staffId || !name) {
             setError('Please enter Staff ID and Name');
             setLoading(false);
             return;
         }
 
-        // Store in localStorage (no API call for now)
-        localStorage.setItem('staff_logged_in', 'true');
-        localStorage.setItem('staff_id', staffId);
-        localStorage.setItem('staff_name', name);
-        
-        setLoading(false);
-        navigate('/staff-dashboard');
+        try {
+            const response = await axios.post('https://green-kerala-api.onrender.com/api/staffapp/staff-login/', {
+                staff_id: parseInt(staffId),
+                name: name.trim()
+            });
+
+            console.log('Login response:', response.data);
+
+            if (response.data.success) {
+                // ✅ STORE THE TOKEN
+                if (response.data.access) {
+                    localStorage.setItem('access_token', response.data.access);
+                }
+                localStorage.setItem('staff_logged_in', 'true');
+                localStorage.setItem('staff_id', response.data.staff_id);
+                localStorage.setItem('staff_name', response.data.name);
+                if (response.data.staff) {
+                    localStorage.setItem('staff_data', JSON.stringify(response.data.staff));
+                }
+                
+                navigate('/staff-dashboard');
+            } else {
+                setError(response.data.message || 'Invalid Staff ID or Name');
+            }
+        } catch (error) {
+            console.error('Login error:', error);
+            setError(error.response?.data?.error || 'Login failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -45,8 +68,8 @@ const StaffLogin = () => {
                                 <div className="mb-3">
                                     <label className="form-label fw-bold">Staff ID</label>
                                     <input 
-                                        type="text" 
-                                        className="form-control" 
+                                        type="number" 
+                                        className="form-control form-control-lg" 
                                         value={staffId} 
                                         onChange={(e) => setStaffId(e.target.value)} 
                                         placeholder="Enter Staff ID"
@@ -57,7 +80,7 @@ const StaffLogin = () => {
                                     <label className="form-label fw-bold">Full Name</label>
                                     <input 
                                         type="text" 
-                                        className="form-control" 
+                                        className="form-control form-control-lg" 
                                         value={name} 
                                         onChange={(e) => setName(e.target.value)} 
                                         placeholder="Enter your full name"
