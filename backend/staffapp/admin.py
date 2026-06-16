@@ -3,7 +3,20 @@ from .models import Staff
 
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ['name', 'phone', 'email', 'is_available', 'assigned_pickups']
-    list_filter = ['is_available']
-    search_fields = ['name', 'phone']
+    list_display = ['id', 'name', 'phone', 'email', 'role', 'is_available']
+    list_filter = ['role', 'is_available']
+    search_fields = ['name', 'phone', 'email']
     list_editable = ['is_available']
+    ordering = ['-id']
+    
+    fieldsets = (
+        ('Personal Information', {
+            'fields': ('name', 'phone', 'email', 'profile_picture')
+        }),
+        ('Work Information', {
+            'fields': ('role', 'is_available')
+        }),
+        ('Account', {
+            'fields': ('user',)
+        }),
+    )

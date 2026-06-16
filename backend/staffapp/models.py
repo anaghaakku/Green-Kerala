@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from harithamission.models import Mission
 
 class Staff(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
@@ -19,7 +19,7 @@ class Staff(models.Model):
     
     def __str__(self):
         return self.name
-
+    
 class StaffDuty(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='duties')
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name='staff_duties')
