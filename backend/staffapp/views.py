@@ -1,59 +1,56 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from .models import Staff
-from .serializers import StaffSerializer
-import json
+from django.contrib.auth.models import User
+from .models import Staff, StaffDuty
+from .serializers import StaffSerializer, StaffDutySerializer
+from harithamission.models import Mission
 
 class StaffViewSet(viewsets.ModelViewSet):
     queryset = Staff.objects.all()
     serializer_class = StaffSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Staff.objects.all()
+        return Staff.objects.filter(user=self.request.user)
+
+class StaffDutyViewSet(viewsets.ModelViewSet):
+    queryset = StaffDuty.objects.all()
+    serializer_class = StaffDutySerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return StaffDuty.objects.all()
+        # Get staff profile for this user
+        try:
+            staff = Staff.objects.get(user=self.request.user)
+            return StaffDuty.objects.filter(staff=staff)
+        except Staff.DoesNotExist:
+            return StaffDuty.objects.none()
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def staff_login(request):
+    staff_id = request.data.get('staff_id')
+    password = request.data.get('password')
+    
     try:
-        # Get data from request
-        staff_id = request.data.get('staff_id')
-        name = request.data.get('name')
-        
-        print("Staff login attempt:", staff_id, name)  # Debug print
-        
-        if not staff_id or not name:
-            return Response({
-                'success': False, 
-                'error': 'Staff ID and Name are required'
-            }, status=400)
-        
-        # Convert staff_id to integer
-        try:
-            staff_id = int(staff_id)
-        except ValueError:
-            return Response({
-                'success': False, 
-                'error': 'Invalid Staff ID'
-            }, status=400)
-        
-        # Find staff member
-        try:
-            staff = Staff.objects.get(id=staff_id, name=name)
+        staff = Staff.objects.get(id=staff_id)
+        user = staff.user
+        if user.check_password(password):
+            # Generate JWT token
+            from rest_framework_simplejwt.tokens import RefreshToken
+            refresh = RefreshToken.for_user(user)
             return Response({
                 'success': True,
-                'staff_id': staff.id,
-                'name': staff.name,
-                'is_available': staff.is_available
+                'staff': StaffSerializer(staff).data,
+                'access': str(refresh.access_token),
+                'refresh': str(refresh)
             })
-        except Staff.DoesNotExist:
-            return Response({
-                'success': False, 
-                'error': 'Invalid Staff ID or Name'
-            }, status=401)
-            
-    except Exception as e:
-        print("Error in staff_login:", str(e))  # Debug print
-        return Response({
-            'success': False, 
-            'error': str(e)
-        }, status=500)
+        return Response({'error': 'Invalid credentials'}, status=401)
+    except Staff.DoesNotExist:
+        return Response({'error': 'Staff not found'}, status=404)

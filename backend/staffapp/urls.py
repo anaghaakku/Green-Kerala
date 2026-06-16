@@ -4,6 +4,7 @@ from . import views
 
 router = DefaultRouter()
 router.register('staff', views.StaffViewSet)
+router.register('staff-duties', views.StaffDutyViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

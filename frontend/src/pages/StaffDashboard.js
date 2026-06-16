@@ -3,97 +3,173 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const StaffDashboard = () => {
-    const [assignedPickups, setAssignedPickups] = useState([]);
+    const [staffData, setStaffData] = useState(null);
+    const [pendingWork, setPendingWork] = useState([]);
+    const [completedWork, setCompletedWork] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState('');
     const navigate = useNavigate();
-    const staffId = localStorage.getItem('staff_id');
-    const staffName = localStorage.getItem('staff_name');
 
     useEffect(() => {
-        if (!staffId) {
+        const staffInfo = localStorage.getItem('staff_data');
+        if (!staffInfo) {
             navigate('/staff-login');
             return;
         }
-        fetchAssignedPickups();
+        setStaffData(JSON.parse(staffInfo));
+        fetchStaffWork();
     }, []);
 
-    const fetchAssignedPickups = async () => {
+    const fetchStaffWork = async () => {
         try {
-            const response = await axios.get(`https://green-kerala-api.onrender.com/api/staff-pickups/${staffId}/`);
-            setAssignedPickups(response.data);
+            // Fetch pending duties for this staff
+            const staffId = localStorage.getItem('staff_id');
+            const response = await axios.get(`https://green-kerala-api.onrender.com/api/staffapp/staff-duties/?staff_id=${staffId}`);
+            
+            const pending = response.data.filter(d => d.status === 'pending' || d.status === 'confirmed');
+            const completed = response.data.filter(d => d.status === 'completed');
+            
+            setPendingWork(pending);
+            setCompletedWork(completed);
         } catch (error) {
-            console.error('Error fetching pickups:', error);
+            console.error('Error fetching work:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const updateStatus = async (pickupId, status) => {
+    const updateWorkStatus = async (workId, status) => {
         try {
-            await axios.put(`https://green-kerala-api.onrender.com/api/update-pickup-status/${pickupId}/`, {
-                status: status,
-                staff_id: staffId
+            await axios.patch(`https://green-kerala-api.onrender.com/api/staffapp/staff-duties/${workId}/`, {
+                status: status
             });
-            fetchAssignedPickups();
-            alert(`Pickup marked as ${status}`);
+            setMessage(`✅ Work ${status} successfully!`);
+            fetchStaffWork();
         } catch (error) {
-            alert('Failed to update status');
+            setMessage('❌ Failed to update status');
         }
+        setTimeout(() => setMessage(''), 3000);
     };
 
-    const logout = () => {
+    const handleLogout = () => {
         localStorage.removeItem('staff_logged_in');
         localStorage.removeItem('staff_id');
         localStorage.removeItem('staff_name');
+        localStorage.removeItem('staff_data');
         navigate('/staff-login');
     };
 
     if (loading) {
-        return <div className="text-center mt-5"><div className="spinner-border"></div><p>Loading...</p></div>;
+        return (
+            <div className="text-center mt-5">
+                <div className="spinner-border text-success" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2">Loading dashboard...</p>
+            </div>
+        );
     }
 
     return (
-        <div className="container my-4">
-            <div className="card shadow-sm">
-                <div className="card-header bg-primary text-white">
-                    <h3 className="mb-0">👨‍💼 Staff Dashboard</h3>
-                    <p>Welcome, {staffName} (ID: {staffId})</p>
-                </div>
-                <div className="card-body">
-                    <button onClick={logout} className="btn btn-danger float-end">Logout</button>
+        <div className="container py-5">
+            {/* Header */}
+            <div className="card border-0 rounded-4 mb-4 shadow-lg" style={{ background: 'linear-gradient(135deg, #1B5E20, #4CAF50)' }}>
+                <div className="card-body p-4 text-white">
+                    <div className="row align-items-center">
+                        <div className="col-8">
+                            <h4>👋 Welcome, {staffData?.name || 'Staff'}!</h4>
+                            <p className="mb-0">Staff ID: {staffData?.id || 'N/A'}</p>
+                            <p className="mb-0">Status: {staffData?.is_available ? '✅ Available' : '❌ Unavailable'}</p>
+                        </div>
+                        <div className="col-4 text-end">
+                            <button onClick={handleLogout} className="btn btn-light text-success btn-sm">Logout</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div className="card mt-4">
-                <div className="card-header bg-success text-white">
-                    <h4>📋 My Assigned Pickups</h4>
+            {message && (
+                <div className={`alert ${message.includes('✅') ? 'alert-success' : 'alert-danger'} text-center`}>
+                    {message}
                 </div>
-                <div className="card-body">
-                    {assignedPickups.length === 0 ? (
-                        <p className="text-muted">No assigned pickups.</p>
+            )}
+
+            {/* Stats */}
+            <div className="row g-4 mb-4">
+                <div className="col-md-4">
+                    <div className="card shadow-sm rounded-4 text-center">
+                        <div className="card-body p-4">
+                            <div className="display-4">📋</div>
+                            <h2 className="fw-bold text-warning">{pendingWork.length}</h2>
+                            <p className="text-muted">Pending Work</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-4">
+                    <div className="card shadow-sm rounded-4 text-center">
+                        <div className="card-body p-4">
+                            <div className="display-4">✅</div>
+                            <h2 className="fw-bold text-success">{completedWork.length}</h2>
+                            <p className="text-muted">Completed</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-md-4">
+                    <div className="card shadow-sm rounded-4 text-center">
+                        <div className="card-body p-4">
+                            <div className="display-4">🎯</div>
+                            <h2 className="fw-bold text-info">{pendingWork.length + completedWork.length}</h2>
+                            <p className="text-muted">Total Work</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Pending Work */}
+            <div className="card border-0 shadow-lg rounded-4 mb-4">
+                <div className="card-header bg-white border-0 pt-4">
+                    <h3 className="fw-bold">📋 Pending Work</h3>
+                </div>
+                <div className="card-body p-4">
+                    {pendingWork.length === 0 ? (
+                        <div className="text-center text-muted py-4">
+                            <span className="display-4">🎉</span>
+                            <p>No pending work! You're all caught up.</p>
+                        </div>
                     ) : (
-                        assignedPickups.map(pickup => (
-                            <div key={pickup.id} className="border rounded p-3 mb-3">
-                                <p><strong>Request #{pickup.id}</strong></p>
-                                <p>📍 {pickup.address}</p>
-                                <p>🗑️ {pickup.waste_type}</p>
-                                <p>👤 {pickup.volunteer_name}</p>
-                                <p>Status: 
-                                    <span className={`badge ms-2 ${pickup.status === 'completed' ? 'bg-success' : 'bg-warning'}`}>
-                                        {pickup.status}
-                                    </span>
-                                </p>
-                                <div className="mt-2">
-                                    {pickup.status === 'pending' && (
-                                        <button className="btn btn-sm btn-primary me-2" onClick={() => updateStatus(pickup.id, 'confirmed')}>
-                                            Mark Confirmed
-                                        </button>
-                                    )}
-                                    {pickup.status === 'confirmed' && (
-                                        <button className="btn btn-sm btn-success" onClick={() => updateStatus(pickup.id, 'completed')}>
-                                            Mark Completed
-                                        </button>
-                                    )}
+                        pendingWork.map(work => (
+                            <div key={work.id} className="border-bottom mb-3 pb-3">
+                                <div className="row align-items-center">
+                                    <div className="col-md-6">
+                                        <h5 className="fw-bold">{work.mission_title}</h5>
+                                        <p className="text-muted small">
+                                            📍 {work.mission_location}<br />
+                                            📅 {new Date(work.duty_date).toLocaleDateString()} at {work.duty_time}
+                                        </p>
+                                    </div>
+                                    <div className="col-md-3">
+                                        <span className={`badge ${work.status === 'pending' ? 'bg-warning' : 'bg-info'} fs-6 px-3 py-2`}>
+                                            {work.status.toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div className="col-md-3 text-end">
+                                        {work.status === 'pending' && (
+                                            <button 
+                                                className="btn btn-success btn-sm me-2"
+                                                onClick={() => updateWorkStatus(work.id, 'in_progress')}
+                                            >
+                                                Start
+                                            </button>
+                                        )}
+                                        {work.status === 'in_progress' && (
+                                            <button 
+                                                className="btn btn-primary btn-sm"
+                                                onClick={() => updateWorkStatus(work.id, 'completed')}
+                                            >
+                                                Complete
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))
