@@ -22,7 +22,7 @@ urlpatterns = [
     path('', home),
     path('admin/', admin.site.urls),
     path('api/', include('harithamission.urls')),
-   path('api/staffapp/', include('staffapp.urls')), 
+    path('api/staffapp/', include('staffapp.urls')), 
 ]
 
 if settings.DEBUG:

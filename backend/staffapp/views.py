@@ -2,6 +2,8 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import User
 from .models import Staff, MissionDuty, WastePickupDuty
 from .serializers import StaffSerializer, MissionDutySerializer, WastePickupDutySerializer
 
@@ -43,11 +45,43 @@ def staff_login(request):
     
     try:
         staff = Staff.objects.get(id=staff_id, name=name)
+        
+        # Generate token for staff
+        # Check if staff has associated user
+        if hasattr(staff, 'user') and staff.user:
+            # Use existing user
+            user = staff.user
+        else:
+            # Create a user for this staff member
+            username = f"staff_{staff_id}"
+            email = staff.email or f"{username}@harithamission.org"
+            
+            # Create or get user
+            user, created = User.objects.get_or_create(
+                username=username,
+                defaults={'email': email}
+            )
+            if created:
+                # Set a random password (staff won't use this)
+                user.set_password(f"staff_{staff_id}_pass")
+                user.save()
+            
+            # Associate user with staff
+            staff.user = user
+            staff.save()
+        
+        # Generate tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+        
         return Response({
             'success': True,
             'staff_id': staff.id,
             'name': staff.name,
-            'staff': StaffSerializer(staff).data
+            'staff': StaffSerializer(staff).data,
+            'access': access_token,
+            'refresh': refresh_token
         })
     except Staff.DoesNotExist:
         return Response({'error': 'Invalid Staff ID or Name'}, status=401)
