@@ -24,8 +24,8 @@ class Staff(models.Model):
 class MissionDuty(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='mission_duties')
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name='staff_duties')
-    duty_date = models.DateField(null=True, blank=True)  # ✅ Made optional
-    duty_time = models.TimeField(null=True, blank=True)  # ✅ Made optional
+    duty_date = models.DateField(null=True, blank=True)
+    duty_time = models.TimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
@@ -42,8 +42,8 @@ class MissionDuty(models.Model):
 class WastePickupDuty(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='waste_duties')
     waste_pickup = models.ForeignKey(WastePickup, on_delete=models.CASCADE, related_name='staff_duties')
-    duty_date = models.DateField(null=True, blank=True)  # ✅ Made optional
-    duty_time = models.TimeField(null=True, blank=True)  # ✅ Made optional
+    duty_date = models.DateField(null=True, blank=True)
+    duty_time = models.TimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),

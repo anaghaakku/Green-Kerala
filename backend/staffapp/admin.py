@@ -4,6 +4,62 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import Staff, MissionDuty, WastePickupDuty
 
+# Helper function to convert time string to time object
+def convert_to_time(time_value):
+    """Convert various time formats to time object"""
+    if not time_value:
+        return None
+    
+    # If it's already a time object, return it
+    if isinstance(time_value, datetime.time):
+        return time_value
+    
+    # If it's a string
+    if isinstance(time_value, str):
+        time_lower = time_value.lower().strip()
+        
+        # Map string times to actual times
+        time_map = {
+            'morning': '09:00:00',
+            'afternoon': '14:00:00',
+            'evening': '17:00:00',
+            'night': '20:00:00',
+            '9am': '09:00:00',
+            '10am': '10:00:00',
+            '11am': '11:00:00',
+            '12pm': '12:00:00',
+            '1pm': '13:00:00',
+            '2pm': '14:00:00',
+            '3pm': '15:00:00',
+            '4pm': '16:00:00',
+            '5pm': '17:00:00',
+            '6pm': '18:00:00',
+        }
+        
+        if time_lower in time_map:
+            time_str = time_map[time_lower]
+        else:
+            time_str = time_lower
+        
+        # Try to parse as time
+        try:
+            # Try HH:MM:SS format
+            if ':' in time_str:
+                parts = time_str.split(':')
+                if len(parts) == 2:
+                    return timezone.now().time().replace(hour=int(parts[0]), minute=int(parts[1]), second=0)
+                elif len(parts) == 3:
+                    return timezone.now().time().replace(hour=int(parts[0]), minute=int(parts[1]), second=int(parts[2]))
+            # Try simple hour
+            elif time_str.isdigit():
+                hour = int(time_str)
+                if 0 <= hour <= 23:
+                    return timezone.now().time().replace(hour=hour, minute=0, second=0)
+        except (ValueError, IndexError):
+            pass
+    
+    return None
+
 @admin.register(Staff)
 class StaffAdmin(admin.ModelAdmin):
     list_display = ['id', 'name', 'phone', 'email', 'role', 'is_available']
@@ -38,7 +94,7 @@ class MissionDutyAdmin(admin.ModelAdmin):
         ('Assignment', {
             'fields': ('staff', 'mission')
         }),
-        ('Schedule', {
+        ('Schedule (Auto-set)', {
             'fields': ('duty_date', 'duty_time')
         }),
         ('Status', {
@@ -47,17 +103,17 @@ class MissionDutyAdmin(admin.ModelAdmin):
     )
     
     def save_model(self, request, obj, form, change):
-        # If no duty_date set, use mission date
         if not obj.duty_date and obj.mission and obj.mission.date:
             obj.duty_date = obj.mission.date
         elif not obj.duty_date:
             obj.duty_date = timezone.now().date() + timedelta(days=1)
         
-        # If no duty_time set, use mission time
-        if not obj.duty_time and obj.mission and obj.mission.time:
-            obj.duty_time = obj.mission.time
-        elif not obj.duty_time:
-            obj.duty_time = timezone.now().time().replace(hour=9, minute=0, second=0)
+        if not obj.duty_time:
+            # Try to get time from mission
+            if obj.mission and obj.mission.time:
+                obj.duty_time = obj.mission.time
+            else:
+                obj.duty_time = timezone.now().time().replace(hour=9, minute=0, second=0)
         
         super().save_model(request, obj, form, change)
 
@@ -86,10 +142,16 @@ class WastePickupDutyAdmin(admin.ModelAdmin):
         elif not obj.duty_date:
             obj.duty_date = timezone.now().date() + timedelta(days=1)
         
-        # Auto-set duty_time from waste_pickup's preferred_time
-        if not obj.duty_time and obj.waste_pickup and obj.waste_pickup.preferred_time:
-            obj.duty_time = obj.waste_pickup.preferred_time
-        elif not obj.duty_time:
-            obj.duty_time = timezone.now().time().replace(hour=10, minute=0, second=0)
+        # Auto-set duty_time from waste_pickup's preferred_time (convert if needed)
+        if not obj.duty_time:
+            if obj.waste_pickup and obj.waste_pickup.preferred_time:
+                # Convert string time to time object
+                converted_time = convert_to_time(obj.waste_pickup.preferred_time)
+                if converted_time:
+                    obj.duty_time = converted_time
+                else:
+                    obj.duty_time = timezone.now().time().replace(hour=10, minute=0, second=0)
+            else:
+                obj.duty_time = timezone.now().time().replace(hour=10, minute=0, second=0)
         
         super().save_model(request, obj, form, change)
