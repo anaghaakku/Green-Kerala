@@ -7,7 +7,7 @@ class Staff(models.Model):
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
-    password = models.CharField(max_length=128, default='')  # Add this field
+    password = models.CharField(max_length=128, default='')  
     role = models.CharField(max_length=50, choices=[
         ('collection', 'Collection Staff'),
         ('driver', 'Driver'),
@@ -24,8 +24,8 @@ class Staff(models.Model):
 class MissionDuty(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='mission_duties')
     mission = models.ForeignKey(Mission, on_delete=models.CASCADE, related_name='staff_duties')
-    duty_date = models.DateField()
-    duty_time = models.TimeField()
+    duty_date = models.DateField(null=True, blank=True)  # ✅ Made optional
+    duty_time = models.TimeField(null=True, blank=True)  # ✅ Made optional
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
@@ -37,13 +37,13 @@ class MissionDuty(models.Model):
     assigned_date = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.staff.name} - {self.mission.title} ({self.duty_date})"
+        return f"{self.staff.name} - {self.mission.title} ({self.duty_date or 'TBD'})"
 
 class WastePickupDuty(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='waste_duties')
     waste_pickup = models.ForeignKey(WastePickup, on_delete=models.CASCADE, related_name='staff_duties')
-    duty_date = models.DateField()
-    duty_time = models.TimeField()
+    duty_date = models.DateField(null=True, blank=True)  # ✅ Made optional
+    duty_time = models.TimeField(null=True, blank=True)  # ✅ Made optional
     status = models.CharField(max_length=20, choices=[
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
@@ -55,4 +55,4 @@ class WastePickupDuty(models.Model):
     assigned_date = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f"{self.staff.name} - Pickup #{self.waste_pickup.id} ({self.duty_date})"
+        return f"{self.staff.name} - Pickup #{self.waste_pickup.id} ({self.duty_date or 'TBD'})"
