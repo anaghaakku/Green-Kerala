@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.hashers import make_password
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time as datetime_time  # ✅ Fixed import
 from .models import Staff, MissionDuty, WastePickupDuty
 
 # Helper function to convert time string to time object
@@ -11,7 +11,7 @@ def convert_to_time(time_value):
         return None
     
     # If it's already a time object, return it
-    if isinstance(time_value, datetime.time):
+    if isinstance(time_value, datetime_time):
         return time_value
     
     # If it's a string
@@ -34,6 +34,8 @@ def convert_to_time(time_value):
             '4pm': '16:00:00',
             '5pm': '17:00:00',
             '6pm': '18:00:00',
+            '7pm': '19:00:00',
+            '8pm': '20:00:00',
         }
         
         if time_lower in time_map:
@@ -47,14 +49,14 @@ def convert_to_time(time_value):
             if ':' in time_str:
                 parts = time_str.split(':')
                 if len(parts) == 2:
-                    return timezone.now().time().replace(hour=int(parts[0]), minute=int(parts[1]), second=0)
+                    return datetime_time(hour=int(parts[0]), minute=int(parts[1]), second=0)
                 elif len(parts) == 3:
-                    return timezone.now().time().replace(hour=int(parts[0]), minute=int(parts[1]), second=int(parts[2]))
+                    return datetime_time(hour=int(parts[0]), minute=int(parts[1]), second=int(parts[2]))
             # Try simple hour
             elif time_str.isdigit():
                 hour = int(time_str)
                 if 0 <= hour <= 23:
-                    return timezone.now().time().replace(hour=hour, minute=0, second=0)
+                    return datetime_time(hour=hour, minute=0, second=0)
         except (ValueError, IndexError):
             pass
     
@@ -109,7 +111,6 @@ class MissionDutyAdmin(admin.ModelAdmin):
             obj.duty_date = timezone.now().date() + timedelta(days=1)
         
         if not obj.duty_time:
-            # Try to get time from mission
             if obj.mission and obj.mission.time:
                 obj.duty_time = obj.mission.time
             else:
