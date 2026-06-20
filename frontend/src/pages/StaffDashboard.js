@@ -8,7 +8,6 @@ const StaffDashboard = () => {
     const [wasteDuties, setWasteDuties] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
-    const [selectedDuty, setSelectedDuty] = useState(null); // For detail view
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -22,11 +21,31 @@ const StaffDashboard = () => {
         }
         
         if (staffInfo) {
-            setStaffData(JSON.parse(staffInfo));
+            try {
+                setStaffData(JSON.parse(staffInfo));
+            } catch (e) {
+                fetchStaffProfile(staffId, token);
+            }
+        } else {
+            fetchStaffProfile(staffId, token);
         }
         
         fetchStaffDuties(staffId, token);
     }, []);
+
+    const fetchStaffProfile = async (staffId, token) => {
+        try {
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+            const response = await axios.get(
+                `https://green-kerala-api.onrender.com/api/staffapp/staff/${staffId}/`,
+                { headers }
+            );
+            setStaffData(response.data);
+            localStorage.setItem('staff_data', JSON.stringify(response.data));
+        } catch (error) {
+            console.error('Error fetching staff profile:', error);
+        }
+    };
 
     const fetchStaffDuties = async (staffId, token) => {
         try {
@@ -37,17 +56,13 @@ const StaffDashboard = () => {
                 `https://green-kerala-api.onrender.com/api/staffapp/mission-duties/?staff_id=${staffId}`,
                 { headers }
             );
-            
-            const missionData = missionRes.data.results || missionRes.data || [];
-            setMissionDuties(missionData);
+            setMissionDuties(missionRes.data.results || missionRes.data || []);
             
             const wasteRes = await axios.get(
                 `https://green-kerala-api.onrender.com/api/staffapp/waste-pickup-duties/?staff_id=${staffId}`,
                 { headers }
             );
-            
-            const wasteData = wasteRes.data.results || wasteRes.data || [];
-            setWasteDuties(wasteData);
+            setWasteDuties(wasteRes.data.results || wasteRes.data || []);
             
         } catch (error) {
             console.error('Error fetching duties:', error);
@@ -73,7 +88,6 @@ const StaffDashboard = () => {
             );
             
             setMessage(`✅ Status updated to ${status}`);
-            setSelectedDuty(null); // Close detail view
             fetchStaffDuties(localStorage.getItem('staff_id'), token);
         } catch (error) {
             console.error('Update error:', error);
@@ -91,16 +105,6 @@ const StaffDashboard = () => {
         navigate('/staff-login');
     };
 
-    // ✅ Open duty detail view
-    const openDutyDetails = (duty, type) => {
-        setSelectedDuty({ ...duty, duty_type: type });
-    };
-
-    // ✅ Close detail view
-    const closeDutyDetails = () => {
-        setSelectedDuty(null);
-    };
-
     const allDuties = [...missionDuties, ...wasteDuties];
     const pendingDuties = allDuties.filter(d => 
         d.status === 'pending' || d.status === 'confirmed' || d.status === 'in_progress'
@@ -113,21 +117,78 @@ const StaffDashboard = () => {
         return (
             <div className="text-center mt-5">
                 <div className="spinner-border text-success"></div>
-                <p>Loading your duties...</p>
+                <p>Loading your dashboard...</p>
             </div>
         );
     }
 
+    // Default profile image if none uploaded
+    const profileImage = staffData?.profile_picture 
+        ? `https://green-kerala-api.onrender.com${staffData.profile_picture}`
+        : `https://ui-avatars.com/api/?name=${staffData?.name || 'Staff'}&background=2E7D32&color=fff&size=100`;
+
     return (
         <div className="container py-5">
-            {/* Header */}
+            {/* Profile Card with Picture */}
+            <div className="card border-0 rounded-4 mb-4 shadow-lg">
+                <div className="card-body p-4">
+                    <div className="row align-items-center">
+                        <div className="col-md-2 text-center">
+                            {/* Profile Picture */}
+                            <img 
+                                src={profileImage}
+                                alt={staffData?.name || 'Staff'}
+                                className="rounded-circle border border-4 border-success"
+                                style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+                            />
+                        </div>
+                        <div className="col-md-10">
+                            <div className="row">
+                                <div className="col-md-4">
+                                    <label className="text-muted small">Staff ID</label>
+                                    <p className="fw-bold fs-5">{staffData?.id || localStorage.getItem('staff_id')}</p>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="text-muted small">Name</label>
+                                    <p className="fw-bold fs-5">{staffData?.name || localStorage.getItem('staff_name')}</p>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="text-muted small">Role</label>
+                                    <p className="fw-bold fs-5">
+                                        <span className="badge bg-success">{staffData?.role || 'Staff'}</span>
+                                    </p>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="text-muted small">Email</label>
+                                    <p className="fw-bold">{staffData?.email || 'N/A'}</p>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="text-muted small">Phone</label>
+                                    <p className="fw-bold">{staffData?.phone || 'N/A'}</p>
+                                </div>
+                                <div className="col-md-4">
+                                    <label className="text-muted small">Status</label>
+                                    <p className="fw-bold">
+                                        {staffData?.is_available ? (
+                                            <span className="badge bg-success">✅ Available</span>
+                                        ) : (
+                                            <span className="badge bg-danger">❌ Unavailable</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Welcome Header */}
             <div className="card border-0 rounded-4 mb-4 shadow-lg" style={{ background: 'linear-gradient(135deg, #1B5E20, #4CAF50)' }}>
                 <div className="card-body p-4 text-white">
                     <div className="row align-items-center">
                         <div className="col-8">
                             <h4>👋 Welcome, {staffData?.name || 'Staff'}!</h4>
                             <p className="mb-0">Staff ID: {staffData?.id || localStorage.getItem('staff_id')}</p>
-                            <p className="mb-0">Role: {staffData?.role || 'Staff'}</p>
                         </div>
                         <div className="col-4 text-end">
                             <button onClick={handleLogout} className="btn btn-light text-success btn-sm rounded-pill">Logout</button>
@@ -173,67 +234,6 @@ const StaffDashboard = () => {
                 </div>
             </div>
 
-            {/* Duty Details Modal */}
-            {selectedDuty && (
-                <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered">
-                        <div className="modal-content rounded-4">
-                            <div className="modal-header bg-success text-white">
-                                <h5 className="modal-title">
-                                    {selectedDuty.duty_type === 'mission' ? '🎯 Mission Duty' : '🗑️ Waste Pickup Duty'}
-                                </h5>
-                                <button type="button" className="btn-close btn-close-white" onClick={closeDutyDetails}></button>
-                            </div>
-                            <div className="modal-body">
-                                <div className="mb-3">
-                                    <label className="fw-bold">Title:</label>
-                                    <p>{selectedDuty.mission_title || `Pickup #${selectedDuty.waste_pickup}`}</p>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="fw-bold">Location:</label>
-                                    <p>{selectedDuty.mission_location || selectedDuty.pickup_address || 'N/A'}</p>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="fw-bold">Date:</label>
-                                    <p>{selectedDuty.duty_date ? new Date(selectedDuty.duty_date).toLocaleDateString() : 'N/A'}</p>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="fw-bold">Time:</label>
-                                    <p>{selectedDuty.duty_time || 'N/A'}</p>
-                                </div>
-                                <div className="mb-3">
-                                    <label className="fw-bold">Status:</label>
-                                    <span className={`badge ${
-                                        selectedDuty.status === 'pending' ? 'bg-warning' : 
-                                        selectedDuty.status === 'completed' ? 'bg-success' : 
-                                        'bg-info'
-                                    } fs-6 px-3 py-2`}>
-                                        {selectedDuty.status?.toUpperCase() || 'PENDING'}
-                                    </span>
-                                </div>
-                                {selectedDuty.notes && (
-                                    <div className="mb-3">
-                                        <label className="fw-bold">Notes:</label>
-                                        <p>{selectedDuty.notes}</p>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="modal-footer">
-                                {selectedDuty.status !== 'completed' && (
-                                    <button 
-                                        className="btn btn-success rounded-pill"
-                                        onClick={() => updateStatus(selectedDuty.duty_type, selectedDuty.id, 'completed')}
-                                    >
-                                        ✅ Complete Duty
-                                    </button>
-                                )}
-                                <button className="btn btn-secondary rounded-pill" onClick={closeDutyDetails}>Close</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* No Duties */}
             {allDuties.length === 0 && (
                 <div className="card border-0 shadow-lg rounded-4">
@@ -250,16 +250,10 @@ const StaffDashboard = () => {
                 <div className="card border-0 shadow-lg rounded-4 mb-4">
                     <div className="card-header bg-white border-0 pt-4">
                         <h3 className="fw-bold">🎯 Mission Duties</h3>
-                        <p className="text-muted">Click on a duty to view details</p>
                     </div>
                     <div className="card-body p-4">
                         {missionDuties.map(duty => (
-                            <div 
-                                key={duty.id} 
-                                className="border-bottom mb-3 pb-3 cursor-pointer"
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => openDutyDetails(duty, 'mission')}
-                            >
+                            <div key={duty.id} className="border-bottom mb-3 pb-3">
                                 <div className="row align-items-center">
                                     <div className="col-md-6">
                                         <h5 className="fw-bold">{duty.mission_title || `Mission #${duty.mission}`}</h5>
@@ -274,15 +268,14 @@ const StaffDashboard = () => {
                                         </span>
                                     </div>
                                     <div className="col-md-3 text-end">
-                                        <button 
-                                            className="btn btn-sm btn-outline-success rounded-pill"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                openDutyDetails(duty, 'mission');
-                                            }}
-                                        >
-                                            👁️ View Details
-                                        </button>
+                                        {duty.status !== 'completed' && (
+                                            <button 
+                                                className="btn btn-success btn-sm rounded-pill"
+                                                onClick={() => updateStatus('mission', duty.id, 'completed')}
+                                            >
+                                                ✅ Complete
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -296,16 +289,10 @@ const StaffDashboard = () => {
                 <div className="card border-0 shadow-lg rounded-4 mb-4">
                     <div className="card-header bg-white border-0 pt-4">
                         <h3 className="fw-bold">🗑️ Waste Pickup Duties</h3>
-                        <p className="text-muted">Click on a duty to view details</p>
                     </div>
                     <div className="card-body p-4">
                         {wasteDuties.map(duty => (
-                            <div 
-                                key={duty.id} 
-                                className="border-bottom mb-3 pb-3 cursor-pointer"
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => openDutyDetails(duty, 'waste')}
-                            >
+                            <div key={duty.id} className="border-bottom mb-3 pb-3">
                                 <div className="row align-items-center">
                                     <div className="col-md-6">
                                         <h5 className="fw-bold">Pickup #{duty.waste_pickup}</h5>
@@ -320,15 +307,14 @@ const StaffDashboard = () => {
                                         </span>
                                     </div>
                                     <div className="col-md-3 text-end">
-                                        <button 
-                                            className="btn btn-sm btn-outline-success rounded-pill"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                openDutyDetails(duty, 'waste');
-                                            }}
-                                        >
-                                            👁️ View Details
-                                        </button>
+                                        {duty.status !== 'completed' && (
+                                            <button 
+                                                className="btn btn-success btn-sm rounded-pill"
+                                                onClick={() => updateStatus('waste', duty.id, 'completed')}
+                                            >
+                                                ✅ Complete
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
