@@ -3,9 +3,11 @@ from django.contrib.auth.models import User
 from harithamission.models import Mission, WastePickup
 
 class Staff(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
+    password = models.CharField(max_length=128, default='')  # Add this field
     role = models.CharField(max_length=50, choices=[
         ('collection', 'Collection Staff'),
         ('driver', 'Driver'),
