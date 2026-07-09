@@ -16,13 +16,13 @@ const Missions = () => {
 
     const fetchMissions = async () => {
         try {
-            // Using the exact endpoint from your screenshot
+            
             const response = await axios.get('https://green-kerala-api.onrender.com/api/missions/');
             
             console.log('Missions API Response:', response.data);
             
             let missionsArray = [];
-            // Handle paginated response (results array)
+            
             if (response.data.results && Array.isArray(response.data.results)) {
                 missionsArray = response.data.results;
             } else if (Array.isArray(response.data)) {
@@ -154,7 +154,7 @@ const Missions = () => {
                                     
                                     {isRegistered(mission.id) ? (
                                         <button className="btn btn-secondary w-100 py-2 rounded-pill" disabled>
-                                            ✅ Already Registered
+                                             Already Registered
                                         </button>
                                     ) : (
                                         <button 

@@ -4,17 +4,16 @@ from django.utils import timezone
 from datetime import datetime, timedelta, time as datetime_time  # ✅ Fixed import
 from .models import Staff, MissionDuty, WastePickupDuty
 
-# Helper function to convert time string to time object
+
 def convert_to_time(time_value):
     """Convert various time formats to time object"""
     if not time_value:
         return None
     
-    # If it's already a time object, return it
     if isinstance(time_value, datetime_time):
         return time_value
     
-    # If it's a string
+    
     if isinstance(time_value, str):
         time_lower = time_value.lower().strip()
         
@@ -42,10 +41,8 @@ def convert_to_time(time_value):
             time_str = time_map[time_lower]
         else:
             time_str = time_lower
-        
-        # Try to parse as time
+       
         try:
-            # Try HH:MM:SS format
             if ':' in time_str:
                 parts = time_str.split(':')
                 if len(parts) == 2:
@@ -137,16 +134,16 @@ class WastePickupDutyAdmin(admin.ModelAdmin):
     )
     
     def save_model(self, request, obj, form, change):
-        # Auto-set duty_date from waste_pickup's preferred_date
+        
         if not obj.duty_date and obj.waste_pickup and obj.waste_pickup.preferred_date:
             obj.duty_date = obj.waste_pickup.preferred_date
         elif not obj.duty_date:
             obj.duty_date = timezone.now().date() + timedelta(days=1)
         
-        # Auto-set duty_time from waste_pickup's preferred_time (convert if needed)
+
         if not obj.duty_time:
             if obj.waste_pickup and obj.waste_pickup.preferred_time:
-                # Convert string time to time object
+                
                 converted_time = convert_to_time(obj.waste_pickup.preferred_time)
                 if converted_time:
                     obj.duty_time = converted_time

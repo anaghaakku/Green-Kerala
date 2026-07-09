@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import Staff, MissionDuty, WastePickupDuty
+from .models import Staff, MissionDuty, WastePickupDuty,WastePickup,Mission
 from .serializers import StaffSerializer, MissionDutySerializer, WastePickupDutySerializer
 
 class StaffViewSet(viewsets.ModelViewSet):
@@ -27,7 +27,6 @@ class MissionDutyViewSet(viewsets.ModelViewSet):
         return MissionDuty.objects.all()
     
     def perform_create(self, serializer):
-        # Auto-set duty_date and duty_time from mission if not provided
         mission = self.request.data.get('mission')
         if mission:
             try:
@@ -52,7 +51,7 @@ class WastePickupDutyViewSet(viewsets.ModelViewSet):
         return WastePickupDuty.objects.all()
     
     def perform_create(self, serializer):
-        # Auto-set duty_date and duty_time from waste_pickup's preferred_date/time
+
         waste_pickup_id = self.request.data.get('waste_pickup')
         if waste_pickup_id:
             try:

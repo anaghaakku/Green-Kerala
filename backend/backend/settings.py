@@ -62,7 +62,6 @@ ADMIN_INDEX_TITLE = "Welcome to HarithaMission Dashboard"
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-# ========== DATABASE CONFIGURATION - POSTGRESQL ==========
 if 'DATABASE_URL' in os.environ:
     DATABASES = {
         'default': dj_database_url.config(
@@ -131,7 +130,7 @@ ADMIN_MEDIA_PREFIX = '/static/admin/'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'HarithaMission <noreply@harithamission.org>'
 
-# CSRF and CORS Settings for Render
+
 CSRF_TRUSTED_ORIGINS = [
     'https://green-kerala-api.onrender.com',
     'https://*.onrender.com',

@@ -25,7 +25,7 @@ from .serializers import (
     RegisterSerializer
 )
 
-# ========== AUTHENTICATION VIEWS ==========
+
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -49,7 +49,6 @@ def admin_stats(request):
         'total_redemptions': RewardRedemption.objects.count(),
     })
 
-# ========== TEST REGISTER ENDPOINT ==========
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -82,7 +81,7 @@ def test_register(request):
     except Exception as e:
         return Response({'error': str(e)}, status=400)
 
-# ========== USER MANAGEMENT VIEWS (Admin Only) ==========
+
 
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
@@ -134,7 +133,7 @@ def remove_admin(request, user_id):
     except User.DoesNotExist:
         return Response({'error': 'User not found'}, status=404)
 
-# ========== VOLUNTEER PROFILE VIEWS ==========
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -150,7 +149,7 @@ def get_volunteer_profile(request):
             'is_active': volunteer.is_active
         })
     except Volunteer.DoesNotExist:
-        # Create volunteer profile if it doesn't exist
+        
         volunteer = Volunteer.objects.create(user=request.user)
         return Response({
             'total_points': 0,
@@ -160,14 +159,14 @@ def get_volunteer_profile(request):
             'is_active': volunteer.is_active
         })
 
-# ========== MISSION VIEWS ==========
+
 
 class MissionViewSet(viewsets.ModelViewSet):
     queryset = Mission.objects.all()
     serializer_class = MissionSerializer
     permission_classes = [AllowAny]
 
-# ========== WASTE PICKUP VIEWS ==========
+
 
 class WastePickupViewSet(viewsets.ModelViewSet):
     queryset = WastePickup.objects.all()
@@ -187,7 +186,7 @@ class WastePickupViewSet(viewsets.ModelViewSet):
         pickup.save()
         volunteer.total_points += points
         volunteer.save()
-# ========== CONTACT MESSAGE VIEWS ==========
+
 
 class ContactMessageViewSet(viewsets.ModelViewSet):
     queryset = ContactMessage.objects.all()
@@ -214,14 +213,14 @@ class ContactMessageViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 
-# ========== REWARD VIEWS ==========
+
 
 class RewardViewSet(viewsets.ModelViewSet):
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
     permission_classes = [AllowAny]
 
-# ========== REWARD REDEMPTION VIEWS ==========
+
 class RewardRedemptionViewSet(viewsets.ModelViewSet):
     queryset = RewardRedemption.objects.all()
     serializer_class = RewardRedemptionSerializer
@@ -252,7 +251,7 @@ class RewardRedemptionViewSet(viewsets.ModelViewSet):
         
         volunteer, _ = Volunteer.objects.get_or_create(user=request.user)
         
-        # Check points and stock
+        
         if volunteer.total_points < reward.points_required:
             return Response(
                 {"error": f"Insufficient points. Need {reward.points_required}, you have {volunteer.total_points}"}, 
@@ -264,7 +263,7 @@ class RewardRedemptionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Create redemption
+        
         redemption = RewardRedemption.objects.create(
             volunteer=volunteer,
             reward=reward,
@@ -272,13 +271,13 @@ class RewardRedemptionViewSet(viewsets.ModelViewSet):
             status='completed'
         )
         
-        # Update points and stock
+        
         volunteer.total_points -= reward.points_required
         volunteer.save()
         reward.stock -= 1
         reward.save()
         
-        # Return custom response
+        
         return Response({
             'id': redemption.id,
             'points_spent': redemption.points_spent,
@@ -305,14 +304,14 @@ class VolunteerViewSet(viewsets.ModelViewSet):
     """ViewSet for viewing and editing volunteers"""
     queryset = Volunteer.objects.all()
     serializer_class = VolunteerSerializer
-    permission_classes = [AllowAny]  # Allow anyone to view volunteers for leaderboard
+    permission_classes = [AllowAny]  
     
     def get_queryset(self):
-        # Return all volunteers, ordered by total_points descending
+     
         return Volunteer.objects.all().order_by('-total_points')
     
 
-# ========== TEMPORARY ADMIN CREATION (REMOVE AFTER USE) ==========
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def create_admin_superuser(request):

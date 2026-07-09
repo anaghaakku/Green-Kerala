@@ -36,7 +36,7 @@ const Contact = () => {
         }
 
         try {
-            // Step 1: Save to Django Backend (for admin panel)
+            
             console.log('Saving to backend...');
             console.log('Data being sent:', {
                 name: formData.name,
@@ -64,7 +64,7 @@ const Contact = () => {
             console.log('Backend response:', backendResponse.data);
 
             if (backendResponse.status === 200 || backendResponse.status === 201) {
-                console.log('✅ Message saved to database!');
+                console.log(' Message saved to database!');
                 
                 // Step 2: Send email via EmailJS
                 try {
